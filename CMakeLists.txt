@@ -23,7 +23,7 @@ if (NOT SDL2_FOUND)
 endif ()
 
 # SDL2_ttf
-pkg_check_modules(SDL2_TTF REQUIRED sdl2_ttf)
+PKG_SEARCH_MODULE(SDL2TTF REQUIRED SDL2_ttf>=2.0.0)
 
 # SDL2_image
 pkg_check_modules(SDL2_IMAGE REQUIRED sdl2_image)
