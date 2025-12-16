@@ -4,20 +4,48 @@ project(myos)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# -------------------- SDL2 --------------------
 find_package(SDL2 REQUIRED)
-find_package(PkgConfig REQUIRED)
+if (NOT SDL2_FOUND)
+    message(FATAL_ERROR "SDL2 not found!")
+endif ()
 
-# SDL2_ttf via pkg-config
-pkg_check_modules(SDL2_TTF REQUIRED sdl2_ttf)
+# -------------------- SDL2_ttf --------------------
+find_path(SDL2_TTF_INCLUDE_DIR SDL_ttf.h
+        PATHS /usr/include/SDL2 /usr/local/include/SDL2
+)
+find_library(SDL2_TTF_LIBRARY NAMES SDL2_ttf
+        PATHS /usr/lib /usr/lib/arm-linux-gnueabihf /usr/local/lib
+)
+if (NOT SDL2_TTF_INCLUDE_DIR OR NOT SDL2_TTF_LIBRARY)
+    message(FATAL_ERROR "SDL2_ttf not found!")
+endif ()
 
-# SDL2_image via pkg-config
-pkg_check_modules(SDL2_IMAGE REQUIRED sdl2_image)
+# -------------------- SDL2_image --------------------
+find_path(SDL2_IMAGE_INCLUDE_DIR SDL_image.h
+        PATHS /usr/include/SDL2 /usr/local/include/SDL2
+)
+find_library(SDL2_IMAGE_LIBRARY NAMES SDL2_image
+        PATHS /usr/lib /usr/lib/arm-linux-gnueabihf /usr/local/lib
+)
+if (NOT SDL2_IMAGE_INCLUDE_DIR OR NOT SDL2_IMAGE_LIBRARY)
+    message(FATAL_ERROR "SDL2_image not found!")
+endif ()
 
-# SDL2_mixer via pkg-config
-pkg_check_modules(SDL2_MIXER REQUIRED sdl2_mixer)
+# -------------------- SDL2_mixer --------------------
+find_path(SDL2_MIXER_INCLUDE_DIR SDL_mixer.h
+        PATHS /usr/include/SDL2 /usr/local/include/SDL2
+)
+find_library(SDL2_MIXER_LIBRARY NAMES SDL2_mixer
+        PATHS /usr/lib /usr/lib/arm-linux-gnueabihf /usr/local/lib
+)
+if (NOT SDL2_MIXER_INCLUDE_DIR OR NOT SDL2_MIXER_LIBRARY)
+    message(FATAL_ERROR "SDL2_mixer not found!")
+endif ()
 
-# Executable
-add_executable(myos main.cpp
+# -------------------- Executable --------------------
+add_executable(myos
+        main.cpp
         AppState.h
         Utils.h
         Utils.cpp
@@ -28,34 +56,30 @@ add_executable(myos main.cpp
         Pages/MusicPage.cpp
         Pages/MusicPage.h
         Pages/MenuPage.cpp
-        Pages/MenuPage.h)
+        Pages/MenuPage.h
+)
 
-# -------------------- SDL2 --------------------
-target_include_directories(myos PRIVATE ${SDL2_INCLUDE_DIRS})
-target_link_libraries(myos PRIVATE ${SDL2_LIBRARIES})
+# -------------------- Include directories --------------------
+target_include_directories(myos PRIVATE
+        ${SDL2_INCLUDE_DIRS}
+        ${SDL2_TTF_INCLUDE_DIR}
+        ${SDL2_IMAGE_INCLUDE_DIR}
+        ${SDL2_MIXER_INCLUDE_DIR}
+)
 
-# -------------------- SDL2_ttf --------------------
-target_include_directories(myos PRIVATE ${SDL2_TTF_INCLUDE_DIRS})
-target_link_directories(myos PRIVATE ${SDL2_TTF_LIBRARY_DIRS})
-target_link_libraries(myos PRIVATE ${SDL2_TTF_LIBRARIES})
-
-# -------------------- SDL2_image --------------------
-target_include_directories(myos PRIVATE ${SDL2_IMAGE_INCLUDE_DIRS})
-target_link_directories(myos PRIVATE ${SDL2_IMAGE_LIBRARY_DIRS})
-target_link_libraries(myos PRIVATE ${SDL2_IMAGE_LIBRARIES})
-
-# -------------------- SDL2_mixer --------------------
-target_include_directories(myos PRIVATE ${SDL2_MIXER_INCLUDE_DIRS})
-target_link_directories(myos PRIVATE ${SDL2_MIXER_LIBRARY_DIRS})
-target_link_libraries(myos PRIVATE ${SDL2_MIXER_LIBRARIES})
+# -------------------- Link libraries --------------------
+target_link_libraries(myos PRIVATE
+        ${SDL2_LIBRARIES}
+        ${SDL2_TTF_LIBRARY}
+        ${SDL2_IMAGE_LIBRARY}
+        ${SDL2_MIXER_LIBRARY}
+)
 
 # -------------------- TagLib --------------------
 find_path(TAGLIB_INCLUDE_DIR taglib/fileref.h)
 find_library(TAGLIB_LIBRARY NAMES tag)
-
 message(STATUS "TagLib include: ${TAGLIB_INCLUDE_DIR}")
 message(STATUS "TagLib lib: ${TAGLIB_LIBRARY}")
-
 target_include_directories(myos PRIVATE ${TAGLIB_INCLUDE_DIR})
 target_link_libraries(myos PRIVATE ${TAGLIB_LIBRARY})
 
