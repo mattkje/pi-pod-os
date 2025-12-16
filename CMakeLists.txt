@@ -50,6 +50,8 @@ add_executable(myos
         Pages/MusicPage.h
         Pages/MenuPage.cpp
         Pages/MenuPage.h
+        Pages/VideoPage.cpp
+        Pages/VideoPage.h
 )
 
 # -------------------- SDL2 --------------------

@@ -29,7 +29,7 @@ int main(int argc, char **argv) {
     AppState state;
     std::vector<MenuItem> mainMenu{
         {"Music", Screen::Music},
-        {"Videos", Screen::Music},
+        {"Videos", Screen::Video},
         {"Photos", Screen::Music},
         {"Podcasts", Screen::Music},
         {"Extras", Screen::Music},

@@ -5,6 +5,7 @@
 enum class Screen {
     MainMenu,
     Music,
+    Video,
     Settings,
     About
 };

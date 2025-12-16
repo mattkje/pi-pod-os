@@ -7,28 +7,76 @@ SDL_Texture *renderText(SDL_Renderer *r, TTF_Font *font, const std::string &text
     return tex;
 }
 
-void drawTopBar(SDL_Renderer *r, TTF_Font *font, const std::string &title, int winWidth) {
-    for (int y = 0; y < 32; y++) {
+void drawTopBar(SDL_Renderer *r, TTF_Font *font, const std::string &title, int winWidth, int batteryPercent) {
+    constexpr int TOP_BAR_HEIGHT = 32;
+
+    // ---------------- Top bar gradient ----------------
+    for (int y = 0; y < TOP_BAR_HEIGHT; y++) {
         Uint8 shade = 245 - y;
         SDL_SetRenderDrawColor(r, shade, shade, shade, 255);
         SDL_RenderDrawLine(r, 0, y, winWidth, y);
     }
     SDL_SetRenderDrawColor(r, 180, 180, 180, 255);
-    SDL_RenderDrawLine(r, 0, 31, winWidth, 31);
+    SDL_RenderDrawLine(r, 0, TOP_BAR_HEIGHT - 1, winWidth, TOP_BAR_HEIGHT - 1);
 
+    // ---------------- Title ----------------
     SDL_Texture *text = renderText(r, font, title, {40, 40, 40, 255});
     int w, h;
     SDL_QueryTexture(text, nullptr, nullptr, &w, &h);
-    SDL_Rect dst{12, (32 - h) / 2, w, h};
+    SDL_Rect dst{12, (TOP_BAR_HEIGHT - h) / 2, w, h};
     SDL_RenderCopy(r, text, nullptr, &dst);
     SDL_DestroyTexture(text);
+
+    // ---------------- Battery ----------------
+    int batteryWidth = 40;
+    int batteryHeight = 14;
+    int x = winWidth - batteryWidth - 12;
+    int yPos = (TOP_BAR_HEIGHT - batteryHeight) / 2;
+
+    // Tip on the left
+    SDL_Rect tip{x - 4, yPos + batteryHeight / 4, 4, batteryHeight / 2};
+    SDL_SetRenderDrawColor(r, 0, 0, 0, 255);
+    SDL_RenderFillRect(r, &tip);
+
+    // Outline
+    SDL_Rect outline{x, yPos, batteryWidth, batteryHeight};
+    SDL_SetRenderDrawColor(r, 0, 0, 0, 255);
+    SDL_RenderDrawRect(r, &outline);
+
+    // Fill color based on battery percent
+    Uint8 rColor, gColor, bColor;
+    if (batteryPercent > 50) {
+        rColor = 0;
+        gColor = 200;
+        bColor = 0;
+    } // green
+    else if (batteryPercent > 20) {
+        rColor = 255;
+        gColor = 200;
+        bColor = 0;
+    } // yellow
+    else {
+        rColor = 255;
+        gColor = 0;
+        bColor = 0;
+    } // red
+
+    int fillWidth = (batteryWidth - 2) * batteryPercent / 100;
+
+    // Gradient fill (bright top, dark bottom)
+    for (int y = 0; y < batteryHeight - 2; y++) {
+        float factor = 0.6f + 0.4f * (1.0f - float(y) / float(batteryHeight - 2)); // top is brighter
+        SDL_SetRenderDrawColor(r, Uint8(rColor * factor), Uint8(gColor * factor), Uint8(bColor * factor), 255);
+        SDL_RenderDrawLine(r, x + 1, yPos + 1 + y, x + 1 + fillWidth, yPos + 1 + y);
+    }
 }
+
 
 void drawHighlight(SDL_Renderer *r, const SDL_Rect &rect) {
     for (int i = 0; i < rect.h; i++) {
-        float t = i / (float)rect.h;
-        Uint8 rCol = (Uint8)(20 + t * 20);
-        Uint8 gCol = (Uint8)(120 + t * 60);
+        float t = i / (float) rect.h;
+        Uint8 rCol = (Uint8) (20 + t * 20);
+        Uint8 gCol = (Uint8) (120 + t * 60);
         Uint8 bCol = 255;
         SDL_SetRenderDrawColor(r, rCol, gCol, bCol, 255);
         SDL_RenderDrawLine(r, rect.x, rect.y + i, rect.x + rect.w, rect.y + i);
