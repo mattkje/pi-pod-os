@@ -17,7 +17,18 @@ pkg_check_modules(SDL2_IMAGE REQUIRED sdl2_image)
 pkg_check_modules(SDL2_MIXER REQUIRED sdl2_mixer)
 
 # Executable
-add_executable(myos main.cpp)
+add_executable(myos main.cpp
+        AppState.h
+        Utils.h
+        Utils.cpp
+        Pages/SettingsPage.cpp
+        Pages/SettingsPage.h
+        Pages/AboutPage.cpp
+        Pages/AboutPage.h
+        Pages/MusicPage.cpp
+        Pages/MusicPage.h
+        Pages/MenuPage.cpp
+        Pages/MenuPage.h)
 
 # -------------------- SDL2 --------------------
 target_include_directories(myos PRIVATE ${SDL2_INCLUDE_DIRS})
