@@ -1,18 +1,23 @@
 # PiPod OS
 
-PiPod OS is a recreation of the classic iPod interface and functionality, optimized for Raspberry Pi devices.
+PiPod OS is a recreation of the classic iPod interface and functionality for Raspberry Pi devices.
+
+## Status
+**Pre-MVP**
+Only basic functionality is implemented. The system is not yet usable.
 
 ## Features
 
 * iPod-style menu navigation
 * Music playback with album artwork
-* Settings page for brightness, theme, volume, shuffle, and repeat
-* About page with system information
+* Optional support for jellyfin music library
+* More TBD...
 
 ## Tech Stack
 
 * **Language:** C++
 * **Target OS:** Raspberry Pi OS Lite
+* * Should work on anything, but goal is for this app to serve as the OS frontend, hence Pi OS Lite being the main target
 * **Libraries / Dependencies:**
 
     * SDL2 (Video, Audio, Input)
@@ -23,24 +28,13 @@ PiPod OS is a recreation of the classic iPod interface and functionality, optimi
 
 ## Installation
 
-1. Install dependencies on Raspberry Pi:
+1. Install **PiPod OS** on a fresh Raspberry Pi OS Lite system by running the installer script:
 
    ```bash
-   sudo apt update
-   sudo apt install libsdl2-dev libsdl2-ttf-dev libsdl2-image-dev libsdl2-mixer-dev libtag1-dev
-   ```
-2. Clone the repository:
-
-   ```bash
-   git clone <repo-url>
-   cd PiPodOS
-   ```
-3. Build the project using your preferred C++ compiler (e.g., `g++` or `make`).
+   git clone https://github.com/mattkje/pi-pod-os.git
+   cd pi-pod-os
+   sudo ./pi-pod-os-install.sh
 
 ## Usage
 
-Run the compiled binary on your Raspberry Pi. Navigate using the arrow keys and `Enter` to select. `Backspace` returns to the previous menu.
-
-## Notes
-
-* Designed for full-screen on small Raspberry Pi displays.
+Navigate using the arrow keys and `Enter` to select. `Backspace` returns to the previous menu.
