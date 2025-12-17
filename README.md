@@ -19,16 +19,16 @@ Only basic functionality is implemented. The system is not yet usable.
 
 ## Tech Stack
 
-* **Language:** C++
-* **Target OS:** Raspberry Pi OS Lite
-* * Should work on anything, but goal is for this app to serve as the OS frontend, hence Pi OS Lite being the main target
-* **Libraries / Dependencies:**
+- **Language:** C++
+- **Target OS:** Raspberry Pi OS Lite  
+  - While the application should run on most systems, the primary goal is for it to act as an OS frontend. Therefore, Raspberry Pi OS Lite is the main target platform.
+- **Libraries / Dependencies:**
+  - SDL2 (video, audio, input)
+  - SDL2_ttf (font rendering)
+  - SDL2_image (image loading)
+  - SDL2_mixer (audio playback)
+  - TagLib (MP3 metadata parsing)
 
-    * SDL2 (Video, Audio, Input)
-    * SDL2_ttf (Fonts)
-    * SDL2_image (Artwork / Images)
-    * SDL2_mixer (Audio Playback)
-    * TagLib (Reading MP3 metadata)
 
 ## Installation
 
