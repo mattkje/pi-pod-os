@@ -26,7 +26,13 @@ std::vector<Song> loadSongs(SDL_Renderer *renderer) {
                 s.artist = "Unknown";
             }
             fs::path artPath = artworkDir / (entry.path().stem().string() + ".png");
-            if (fs::exists(artPath)) s.artwork = IMG_LoadTexture(renderer, artPath.c_str());
+            if (fs::exists(artPath)) {
+                SDL_Texture *tex = IMG_LoadTexture(renderer, artPath.c_str());
+                if (tex) {
+                    // wrap raw SDL_Texture* in shared_ptr with SDL_DestroyTexture as deleter
+                    s.artwork.reset(tex, SDL_DestroyTexture);
+                }
+            }
             songs.push_back(s);
         }
     }
@@ -61,12 +67,12 @@ void drawSongsMenu(SDL_Renderer *r, TTF_Font *font, AppState &state, const std::
 
         if (songs[i].artwork) {
             int artW, artH;
-            SDL_QueryTexture(songs[i].artwork, nullptr, nullptr, &artW, &artH);
+            SDL_QueryTexture(songs[i].artwork.get(), nullptr, nullptr, &artW, &artH);
             float scale = 36.0f / artH * 0.8f;
             int w = (int)(artW * scale);
             int h = (int)(artH * scale);
             SDL_Rect artRect{winWidth - w - 8, (int)y + (36 - h)/2, w, h};
-            SDL_RenderCopy(r, songs[i].artwork, nullptr, &artRect);
+            SDL_RenderCopy(r, songs[i].artwork.get(), nullptr, &artRect);
         }
     }
 }
@@ -93,11 +99,11 @@ void drawMusicScreen(SDL_Renderer *r, TTF_Font *font, const Song *currentSong, i
 
     if (currentSong->artwork) {
         int artW, artH;
-        SDL_QueryTexture(currentSong->artwork, nullptr, nullptr, &artW, &artH);
+        SDL_QueryTexture(currentSong->artwork.get(), nullptr, nullptr, &artW, &artH);
         float scale = std::min(winWidth*0.8f/artW, (winHeight-200)*0.8f/artH);
         int w = (int)(artW*scale);
         int h = (int)(artH*scale);
         SDL_Rect rect{(winWidth-w)/2, 140, w, h};
-        SDL_RenderCopy(r, currentSong->artwork, nullptr, &rect);
+        SDL_RenderCopy(r, currentSong->artwork.get(), nullptr, &rect);
     }
 }

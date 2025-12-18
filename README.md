@@ -29,6 +29,13 @@ Only basic functionality is implemented. The system is not yet usable.
   - SDL2_mixer (audio playback)
   - TagLib (MP3 metadata parsing)
 
+## Image Gallery
+
+Test run on Raspberry Pi 3B+, running Raspberry Pi OS 64bit Lite, with a 2.8" pitft display.
+
+<img src="resources/image1.jpg" alt="PiPod OS image 1" width="300">
+<img src="resources/image2.jpg" alt="PiPod OS image 2" width="300">
+
 
 ## Installation
 

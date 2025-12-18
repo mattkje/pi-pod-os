@@ -13,6 +13,7 @@
 
 int main(int argc, char **argv) {
     // ------------------ SDL INIT ------------------
+    SDL_StartTextInput();
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
     TTF_Init();
     IMG_Init(IMG_INIT_PNG);
@@ -68,7 +69,7 @@ int main(int argc, char **argv) {
                         else if (state.current == Screen::Music)
                             state.selected = (state.selected + 1) % songs.size();
                         else if (state.current == Screen::Settings)
-                            state.selected = (state.selected + 1) % 6; // 6 settings items
+                            state.selected = (state.selected + 1) % 7;
                         break;
                     case SDLK_RETURN:
                         if (state.current == Screen::MainMenu)
@@ -82,8 +83,11 @@ int main(int argc, char **argv) {
                             currentMusic = Mix_LoadMUS(currentSong->filePath.c_str());
                             if (currentMusic) Mix_PlayMusic(currentMusic, 1);
                         } else if (state.current == Screen::Settings) {
-                            // Handle actions for each setting here if needed
+                            if (state.selected == 5) {
+                                state.inputMode = SettingsInputMode::JellyfinUrl;
+                            }
                         }
+
                         break;
                     case SDLK_BACKSPACE:
                         state.current = Screen::MainMenu;
@@ -92,6 +96,37 @@ int main(int argc, char **argv) {
                 }
             }
         }
+
+        if (state.inputMode != SettingsInputMode::None && e.type == SDL_TEXTINPUT) {
+            std::string *target = nullptr;
+            if (state.inputMode == SettingsInputMode::JellyfinUrl) target = &state.jellyfinUrl;
+            else if (state.inputMode == SettingsInputMode::JellyfinUser) target = &state.jellyfinUser;
+            else if (state.inputMode == SettingsInputMode::JellyfinPass) target = &state.jellyfinPass;
+
+            if (target) target->append(e.text.text);
+        }
+
+        if (state.inputMode != SettingsInputMode::None && e.type == SDL_KEYDOWN) {
+            std::string *target = nullptr;
+            if (state.inputMode == SettingsInputMode::JellyfinUrl) target = &state.jellyfinUrl;
+            else if (state.inputMode == SettingsInputMode::JellyfinUser) target = &state.jellyfinUser;
+            else if (state.inputMode == SettingsInputMode::JellyfinPass) target = &state.jellyfinPass;
+
+            if (target) {
+                if (e.key.keysym.sym == SDLK_BACKSPACE && !target->empty()) {
+                    target->pop_back();
+                } else if (e.key.keysym.sym == SDLK_RETURN) {
+                    // Move to next field
+                    if (state.inputMode == SettingsInputMode::JellyfinUrl)
+                        state.inputMode = SettingsInputMode::JellyfinUser;
+                    else if (state.inputMode == SettingsInputMode::JellyfinUser)
+                        state.inputMode = SettingsInputMode::JellyfinPass;
+                    else
+                        state.inputMode = SettingsInputMode::None; // finished
+                }
+            }
+        }
+
 
         int winWidth, winHeight;
         SDL_GetWindowSize(window, &winWidth, &winHeight);
@@ -111,6 +146,8 @@ int main(int argc, char **argv) {
                 else
                     drawSongsMenu(renderer, font, state, songs, winWidth, winHeight);
                 break;
+            case Screen::Video:
+                drawTopBar(renderer, font, "Videos", winWidth);
             case Screen::Settings:
                 drawSettingsPage(renderer, font, state, winWidth, winHeight);
                 break;
@@ -123,11 +160,13 @@ int main(int argc, char **argv) {
     }
 
     // ------------------ CLEANUP ------------------
-    for (auto &s: songs) if (s.artwork) SDL_DestroyTexture(s.artwork);
+    for (auto &s: songs) if (s.artwork) SDL_DestroyTexture(s.artwork.get());
     if (currentMusic) Mix_FreeMusic(currentMusic);
     TTF_CloseFont(font);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
+    SDL_StopTextInput();
+
 
     IMG_Quit();
     TTF_Quit();

@@ -1,4 +1,13 @@
 #include "Utils.h"
+#include "JellyfinClient.h"
+
+std::vector<Song> loadJellyfinSongs(SDL_Renderer* /*renderer*/,
+                                    const std::string& serverUrl,
+                                    const std::string& apiKey,
+                                    const std::string& userId,
+                                    const std::string& libraryId) {
+    return Jellyfin::fetchSongs(serverUrl, apiKey, userId, libraryId);
+}
 
 SDL_Texture *renderText(SDL_Renderer *r, TTF_Font *font, const std::string &text, SDL_Color color) {
     SDL_Surface *surf = TTF_RenderUTF8_Blended(font, text.c_str(), color);

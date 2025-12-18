@@ -52,7 +52,19 @@ add_executable(myos
         Pages/MenuPage.h
         Pages/VideoPage.cpp
         Pages/VideoPage.h
+        JellyfinClient.cpp
+        JellyfinClient.h
+        Song.h
 )
+
+# Language: cmake
+# Add near other find_package / target_link_libraries
+find_package(CURL REQUIRED)
+find_package(nlohmann_json REQUIRED)
+
+target_include_directories(${PROJECT_NAME} PRIVATE ${CURL_INCLUDE_DIR})
+target_link_libraries(${PROJECT_NAME} PRIVATE CURL::libcurl nlohmann_json::nlohmann_json)
+
 
 # -------------------- SDL2 --------------------
 target_include_directories(myos PRIVATE ${SDL2_INCLUDE_DIRS})
