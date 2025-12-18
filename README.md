@@ -35,6 +35,7 @@ Test run on Raspberry Pi 3B+, running Raspberry Pi OS 64bit Lite, with a 2.8" pi
 
 <img src="resources/image1.jpg" alt="PiPod OS image 1" width="300">
 <img src="resources/image2.jpg" alt="PiPod OS image 2" width="300">
+<img src="resources/image3.jpg" alt="PiPod OS image 3" width="300">
 
 
 ## Installation
