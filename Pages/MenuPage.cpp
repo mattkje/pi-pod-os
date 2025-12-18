@@ -4,8 +4,8 @@
 const SDL_Color TEXT_COLOR = {40, 40, 40, 255};
 const SDL_Color SELECTED_TEXT_COLOR = {255, 255, 255, 255};
 const SDL_Color SEPARATOR_COLOR = {200, 200, 200, 255};
-constexpr int ITEM_HEIGHT = 36;
-constexpr int TOP_BAR_HEIGHT = 32;
+constexpr int ITEM_HEIGHT = 23;
+constexpr int TOP_BAR_HEIGHT = 20;
 
 void drawMenu(SDL_Renderer *r, TTF_Font *font, AppState &state,
               const std::vector<MenuItem> &items, int winWidth, int winHeight) {

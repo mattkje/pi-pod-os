@@ -17,7 +17,7 @@ SDL_Texture *renderText(SDL_Renderer *r, TTF_Font *font, const std::string &text
 }
 
 void drawTopBar(SDL_Renderer *r, TTF_Font *font, const std::string &title, int winWidth, int batteryPercent) {
-    constexpr int TOP_BAR_HEIGHT = 32;
+    constexpr int TOP_BAR_HEIGHT = 20;
 
     // ---------------- Top bar gradient ----------------
     for (int y = 0; y < TOP_BAR_HEIGHT; y++) {
