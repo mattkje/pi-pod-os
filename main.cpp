@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
                         else if (state.current == Screen::Music)
                             state.selected = (state.selected + 1) % songs.size();
                         else if (state.current == Screen::Settings)
-                            state.selected = (state.selected + 1) % 7;
+                            state.selected = (state.selected + 1) % 8;
                         break;
                     case SDLK_RETURN:
                         if (state.current == Screen::MainMenu)

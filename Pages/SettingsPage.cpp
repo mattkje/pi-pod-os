@@ -10,6 +10,7 @@ void drawSettingsPage(SDL_Renderer *r, TTF_Font *font, AppState &state, int winW
 
 
     std::vector<std::string> settingsItems{
+        "Update Software",
         "Brightness: Medium",
         "Theme: Light",
         "Volume: 75%",

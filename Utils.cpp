@@ -1,11 +1,11 @@
 #include "Utils.h"
 #include "JellyfinClient.h"
 
-std::vector<Song> loadJellyfinSongs(SDL_Renderer* /*renderer*/,
-                                    const std::string& serverUrl,
-                                    const std::string& apiKey,
-                                    const std::string& userId,
-                                    const std::string& libraryId) {
+std::vector<Song> loadJellyfinSongs(SDL_Renderer * /*renderer*/,
+                                    const std::string &serverUrl,
+                                    const std::string &apiKey,
+                                    const std::string &userId,
+                                    const std::string &libraryId) {
     return Jellyfin::fetchSongs(serverUrl, apiKey, userId, libraryId);
 }
 
@@ -21,12 +21,21 @@ void drawTopBar(SDL_Renderer *r, TTF_Font *font, const std::string &title, int w
 
     // ---------------- Top bar gradient ----------------
     for (int y = 0; y < TOP_BAR_HEIGHT; y++) {
-        Uint8 shade = 245 - y;
+        float t = float(y) / float(TOP_BAR_HEIGHT - 1);
+
+        // Non-linear gradient: bottom darker more
+        float factor = t * t; // quadratic to make bottom darker faster
+        Uint8 shade = Uint8(245 - factor * 50); // subtract up to 50 at bottom
+
         SDL_SetRenderDrawColor(r, shade, shade, shade, 255);
         SDL_RenderDrawLine(r, 0, y, winWidth, y);
     }
+
+
+    // Bottom line
     SDL_SetRenderDrawColor(r, 180, 180, 180, 255);
     SDL_RenderDrawLine(r, 0, TOP_BAR_HEIGHT - 1, winWidth, TOP_BAR_HEIGHT - 1);
+
 
     // ---------------- Title ----------------
     SDL_Texture *text = renderText(r, font, title, {40, 40, 40, 255});
@@ -37,13 +46,13 @@ void drawTopBar(SDL_Renderer *r, TTF_Font *font, const std::string &title, int w
     SDL_DestroyTexture(text);
 
     // ---------------- Battery ----------------
-    int batteryWidth = 40;
+    int batteryWidth = 30; // shorter battery
     int batteryHeight = 14;
     int x = winWidth - batteryWidth - 12;
     int yPos = (TOP_BAR_HEIGHT - batteryHeight) / 2;
 
-    // Tip on the left
-    SDL_Rect tip{x - 4, yPos + batteryHeight / 4, 4, batteryHeight / 2};
+    // Tip on the right
+    SDL_Rect tip{x + batteryWidth, yPos + batteryHeight / 4, 4, batteryHeight / 2};
     SDL_SetRenderDrawColor(r, 0, 0, 0, 255);
     SDL_RenderFillRect(r, &tip);
 
@@ -52,30 +61,30 @@ void drawTopBar(SDL_Renderer *r, TTF_Font *font, const std::string &title, int w
     SDL_SetRenderDrawColor(r, 0, 0, 0, 255);
     SDL_RenderDrawRect(r, &outline);
 
-    // Fill color based on battery percent
-    Uint8 rColor, gColor, bColor;
-    if (batteryPercent > 50) {
-        rColor = 0;
-        gColor = 200;
-        bColor = 0;
-    } // green
-    else if (batteryPercent > 20) {
-        rColor = 255;
-        gColor = 200;
-        bColor = 0;
-    } // yellow
-    else {
-        rColor = 255;
-        gColor = 0;
-        bColor = 0;
-    } // red
-
+    // Fill gradient based on battery percent
     int fillWidth = (batteryWidth - 2) * batteryPercent / 100;
 
-    // Gradient fill (bright top, dark bottom)
+    // Gradient colors for green
+    SDL_Color topColor{0xa9, 0xd3, 0xa4, 255};
+    SDL_Color bottomColor{0x44, 0x78, 0x4e, 255};
+    SDL_Color darkerTop{0x89, 0xb3, 0x84, 255}; // tiny darker line at very top
+
     for (int y = 0; y < batteryHeight - 2; y++) {
-        float factor = 0.6f + 0.4f * (1.0f - float(y) / float(batteryHeight - 2)); // top is brighter
-        SDL_SetRenderDrawColor(r, Uint8(rColor * factor), Uint8(gColor * factor), Uint8(bColor * factor), 255);
+        float t = float(y) / float(batteryHeight - 2);
+        Uint8 rCol, gCol, bCol;
+
+        // Optional darker top line
+        if (y == 0) {
+            rCol = darkerTop.r;
+            gCol = darkerTop.g;
+            bCol = darkerTop.b;
+        } else {
+            rCol = Uint8(topColor.r * (1.0f - t) + bottomColor.r * t);
+            gCol = Uint8(topColor.g * (1.0f - t) + bottomColor.g * t);
+            bCol = Uint8(topColor.b * (1.0f - t) + bottomColor.b * t);
+        }
+
+        SDL_SetRenderDrawColor(r, rCol, gCol, bCol, 255);
         SDL_RenderDrawLine(r, x + 1, yPos + 1 + y, x + 1 + fillWidth, yPos + 1 + y);
     }
 }
