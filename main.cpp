@@ -137,7 +137,6 @@ int main(int argc, char **argv) {
         // ------------------ DRAW CURRENT SCREEN ------------------
         switch (state.current) {
             case Screen::MainMenu:
-                drawTopBar(renderer, font, "iPod", winWidth);
                 drawMenu(renderer, font, state, mainMenu, winWidth, winHeight);
                 break;
             case Screen::Music:
