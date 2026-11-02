@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PiPod</title>
+<style>
+  :root {
+    --bg: #eef0f4;
+    --card: #ffffff;
+    --text: #1d1d1f;
+    --sub: #6e6e73;
+    --line: #e2e3e8;
+    --blue1: #3d9bff;
+    --blue2: #1468e0;
+    --danger: #d93a2b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font: 15px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+  }
+  header {
+    background: linear-gradient(#fbfbfb, #d6d7db);
+    border-bottom: 1px solid #b4b5b9;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+  header h1 { font-size: 17px; margin: 0; }
+  header .meta { color: var(--sub); font-size: 13px; }
+  main { max-width: 760px; margin: 0 auto; padding: 16px; }
+  .card {
+    background: var(--card);
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .08);
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .hidden { display: none !important; }
+  button {
+    font: inherit;
+    border: 0;
+    border-radius: 8px;
+    padding: 8px 14px;
+    cursor: pointer;
+    color: #fff;
+    background: linear-gradient(var(--blue1), var(--blue2));
+  }
+  button.ghost { background: none; color: var(--danger); padding: 6px 10px; }
+  button.ghost:hover { background: #fdecea; }
+  button:disabled { opacity: .5; cursor: default; }
+
+  /* Login */
+  #login { padding: 28px 20px; text-align: center; }
+  #login p { color: var(--sub); margin: 6px 0 18px; }
+  #code {
+    font-size: 32px;
+    letter-spacing: 12px;
+    text-align: center;
+    width: 190px;
+    padding: 8px 0 8px 12px;
+    border: 1px solid #c7c8cc;
+    border-radius: 10px;
+  }
+  #loginError { color: var(--danger); min-height: 20px; margin-top: 10px; }
+
+  /* Upload */
+  #drop {
+    margin: 16px;
+    border: 2px dashed #b9c6dc;
+    border-radius: 12px;
+    padding: 26px 16px;
+    text-align: center;
+    color: var(--sub);
+    transition: background .15s, border-color .15s;
+  }
+  #drop.over { background: #eaf2ff; border-color: var(--blue1); }
+  #drop strong { color: var(--text); display: block; margin-bottom: 6px; }
+  #queue:empty { display: none; }
+  .job { padding: 10px 16px; border-top: 1px solid var(--line); }
+  .job .row { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; }
+  .job .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .job .state { color: var(--sub); flex: none; }
+  .job.error .state { color: var(--danger); }
+  .bar { height: 6px; background: #e4e6eb; border-radius: 3px; margin-top: 6px; overflow: hidden; }
+  .bar > div { height: 100%; width: 0; background: linear-gradient(var(--blue1), var(--blue2)); transition: width .1s; }
+
+  /* Songs */
+  .listhead {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .listhead h2 { font-size: 15px; margin: 0; }
+  .listhead input {
+    font: inherit;
+    border: 1px solid #c7c8cc;
+    border-radius: 8px;
+    padding: 5px 10px;
+    width: 45%;
+  }
+  .song { display: flex; align-items: center; gap: 12px; padding: 9px 16px; border-bottom: 1px solid var(--line); }
+  .song:last-child { border-bottom: 0; }
+  .song .info { flex: 1; min-width: 0; }
+  .song .title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .song .artist { color: var(--sub); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .song .size { color: var(--sub); font-size: 13px; flex: none; }
+  .empty { padding: 24px 16px; color: var(--sub); text-align: center; }
+
+  /* Tabs */
+  nav.tabs { display: flex; gap: 4px; background: #dfe1e7; border-radius: 10px; padding: 3px; margin-bottom: 16px; }
+  nav.tabs button {
+    flex: 1; background: none; color: var(--text); padding: 7px 0; border-radius: 8px; font-weight: 500;
+  }
+  nav.tabs button.active { background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+  #feedForm { display: flex; gap: 8px; padding: 16px; }
+  #feedForm input { flex: 1; font: inherit; border: 1px solid #c7c8cc; border-radius: 8px; padding: 7px 10px; min-width: 0; }
+  #feedError { color: var(--danger); padding: 0 16px 12px; min-height: 0; }
+  #feedError:empty { display: none; }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="deviceName">PiPod</h1>
+  <span class="meta" id="free"></span>
+</header>
+
+<main>
+  <section class="card hidden" id="login">
+    <h2>Enter access code</h2>
+    <p>Find it on your PiPod under Settings &rsaquo; Add Media.</p>
+    <form id="loginForm">
+      <input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="4" pattern="[0-9]*" autofocus>
+      <div style="margin-top:16px"><button type="submit">Connect</button></div>
+      <div id="loginError"></div>
+    </form>
+  </section>
+
+  <div id="app" class="hidden">
+    <nav class="tabs">
+      <button data-tab="music" class="active">Music</button>
+      <button data-tab="videos">Videos</button>
+      <button data-tab="photos">Photos</button>
+      <button data-tab="podcasts">Podcasts</button>
+    </nav>
+
+    <section class="card" id="uploadCard">
+      <div id="drop">
+        <strong id="dropTitle">Drop songs here</strong>
+        <span id="dropTypes">MP3, FLAC, OGG, Opus or WAV</span> &mdash; or
+        <button type="button" id="pick">choose files</button>
+        <input type="file" id="files" multiple class="hidden">
+      </div>
+      <div id="queue"></div>
+    </section>
+
+    <section class="card hidden" id="feedCard">
+      <form id="feedForm">
+        <input id="feedUrl" type="url" placeholder="Podcast feed address (RSS), e.g. https://example.com/feed.xml" required>
+        <button type="submit">Subscribe</button>
+      </form>
+      <div id="feedError"></div>
+    </section>
+
+    <section class="card">
+      <div class="listhead">
+        <h2 id="count">Songs</h2>
+        <input id="filter" type="search" placeholder="Search">
+      </div>
+      <div id="songs"></div>
+    </section>
+  </div>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+
+const TABS = {
+  music:  { title: "Drop songs here",  types: "MP3, FLAC, OGG, Opus or WAV",
+            accept: ".mp3,.flac,.ogg,.opus,.wav,audio/*", one: "song", many: "songs" },
+  videos: { title: "Drop videos here", types: "MP4, M4V, MKV, MOV, WebM or AVI",
+            accept: ".mp4,.m4v,.mkv,.mov,.webm,.avi,video/*", one: "video", many: "videos" },
+  photos: { title: "Drop photos here", types: "JPEG, PNG, GIF, WebP or BMP",
+            accept: ".jpg,.jpeg,.png,.gif,.webp,.bmp,image/*", one: "photo", many: "photos" },
+  podcasts: { one: "podcast", many: "podcasts" },
+};
+let tab = "music";
+let items = [];
+
+function formatBytes(n) {
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  let u = 0;
+  while (n >= 1024 && u < units.length - 1) { n /= 1024; u++; }
+  return (u === 0 || n >= 10 ? n.toFixed(0) : n.toFixed(1)) + " " + units[u];
+}
+
+async function api(path, options = {}) {
+  const res = await fetch(path, options);
+  let body = {};
+  try { body = await res.json(); } catch (e) {}
+  if (res.status === 401 && path !== "/api/login") showLogin();
+  if (!res.ok) throw new Error(body.error || res.statusText);
+  return body;
+}
+
+function showLogin() {
+  $("app").classList.add("hidden");
+  $("login").classList.remove("hidden");
+  $("code").focus();
+}
+
+function showApp() {
+  $("login").classList.add("hidden");
+  $("app").classList.remove("hidden");
+}
+
+async function refreshInfo() {
+  const info = await api("/api/info");
+  $("deviceName").textContent = info.name || "PiPod";
+  document.title = info.name || "PiPod";
+  $("free").textContent = info.free !== undefined ? formatBytes(info.free) + " free" : "";
+  return info;
+}
+
+function setTab(name) {
+  tab = name;
+  document.querySelectorAll("nav.tabs button").forEach(b => b.classList.toggle("active", b.dataset.tab === name));
+  const t = TABS[name];
+  const isFeeds = name === "podcasts";
+  $("uploadCard").classList.toggle("hidden", isFeeds);
+  $("feedCard").classList.toggle("hidden", !isFeeds);
+  if (!isFeeds) {
+    $("dropTitle").textContent = t.title;
+    $("dropTypes").textContent = t.types;
+    $("files").accept = t.accept;
+  }
+  $("filter").value = "";
+  items = [];
+  render();
+  refreshList().catch(() => {});
+}
+
+async function refreshList() {
+  const current = tab;
+  const list = current === "podcasts" ? await api("/api/podcasts") : await api("/api/" + current + "/files");
+  if (current !== tab) return; // switched tabs meanwhile
+  items = list;
+  render();
+  refreshInfo().catch(() => {});
+}
+
+function render() {
+  const t = TABS[tab];
+  const q = $("filter").value.trim().toLowerCase();
+  const list = items
+    .filter(s => !q || JSON.stringify(s).toLowerCase().includes(q))
+    .sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+  $("count").textContent = items.length === 1 ? "1 " + t.one : items.length + " " + t.many;
+  const box = $("songs");
+  box.innerHTML = "";
+  if (!list.length) {
+    const msg = items.length ? "No matches" : (tab === "podcasts" ? "No subscriptions yet." : "Nothing here yet. Drop some files above.");
+    box.innerHTML = '<div class="empty">' + msg + "</div>";
+    return;
+  }
+  for (const s of list) {
+    const row = document.createElement("div");
+    row.className = "song";
+    row.innerHTML = '<div class="info"><div class="title"></div><div class="artist"></div></div>' +
+      '<div class="size"></div><button class="ghost" title="Delete"></button>';
+    row.querySelector(".title").textContent = s.title;
+    const btn = row.querySelector("button");
+    if (tab === "podcasts") {
+      row.querySelector(".artist").textContent = s.error ? "Error: " + s.error : s.url;
+      row.querySelector(".size").textContent = s.error ? "" : (s.episodes === 1 ? "1 episode" : s.episodes + " episodes");
+      btn.textContent = "Unsubscribe";
+    } else {
+      row.querySelector(".artist").textContent = s.subtitle || "";
+      row.querySelector(".size").textContent = formatBytes(s.size);
+      btn.textContent = "Delete";
+    }
+    btn.onclick = () => removeItem(s, row);
+    box.appendChild(row);
+  }
+}
+
+async function removeItem(item, row) {
+  const what = tab === "podcasts" ? 'Unsubscribe from "' + item.title + '"?' : 'Delete "' + item.title + '" from the PiPod?';
+  if (!confirm(what)) return;
+  row.style.opacity = .4;
+  try {
+    if (tab === "podcasts") {
+      await api("/api/podcasts?url=" + encodeURIComponent(item.url), { method: "DELETE" });
+    } else {
+      await api("/api/" + tab + "/files/" + item.path.split("/").map(encodeURIComponent).join("/"), { method: "DELETE" });
+    }
+    items = items.filter(s => s !== item);
+    render();
+    setTimeout(() => refreshList().catch(() => {}), 1500);
+  } catch (e) {
+    row.style.opacity = 1;
+    alert(e.message);
+  }
+}
+
+// ---- Uploads: one at a time, each a PUT with the file as body ----
+const pending = [];
+let uploading = false;
+
+function queueFiles(fileList) {
+  for (const file of fileList) {
+    const job = document.createElement("div");
+    job.className = "job";
+    job.innerHTML = '<div class="row"><span class="name"></span><span class="state">Waiting</span></div>' +
+      '<div class="bar"><div></div></div>';
+    job.querySelector(".name").textContent = file.name;
+    $("queue").appendChild(job);
+    pending.push({ file, job, category: tab });
+  }
+  if (!uploading) nextUpload();
+}
+
+function nextUpload() {
+  const item = pending.shift();
+  if (!item) {
+    uploading = false;
+    refreshList().catch(() => {});
+    return;
+  }
+  uploading = true;
+  const { file, job, category } = item;
+  const state = job.querySelector(".state");
+  const bar = job.querySelector(".bar > div");
+  const xhr = new XMLHttpRequest();
+  xhr.open("PUT", "/api/" + category + "/files/" + encodeURIComponent(file.name));
+  xhr.upload.onprogress = (e) => {
+    if (!e.lengthComputable) return;
+    const pct = Math.round(e.loaded / e.total * 100);
+    bar.style.width = pct + "%";
+    state.textContent = pct + "%";
+  };
+  xhr.onload = () => {
+    let body = {};
+    try { body = JSON.parse(xhr.responseText); } catch (e) {}
+    if (xhr.status >= 200 && xhr.status < 300) {
+      bar.style.width = "100%";
+      state.textContent = "Done";
+      setTimeout(() => job.remove(), 2500);
+    } else {
+      job.classList.add("error");
+      state.textContent = body.error || "Failed";
+      if (xhr.status === 401) showLogin();
+    }
+    nextUpload();
+  };
+  xhr.onerror = () => {
+    job.classList.add("error");
+    state.textContent = "Connection lost";
+    nextUpload();
+  };
+  state.textContent = "0%";
+  xhr.send(file);
+}
+
+// ---- Wiring ----
+document.querySelectorAll("nav.tabs button").forEach(b => b.onclick = () => setTab(b.dataset.tab));
+const drop = $("drop");
+["dragenter", "dragover"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", e => queueFiles(e.dataTransfer.files));
+$("pick").onclick = () => $("files").click();
+$("files").onchange = e => { queueFiles(e.target.files); e.target.value = ""; };
+$("filter").oninput = render;
+
+$("feedForm").onsubmit = async (e) => {
+  e.preventDefault();
+  $("feedError").textContent = "";
+  try {
+    await api("/api/podcasts", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: $("feedUrl").value }) });
+    $("feedUrl").value = "";
+    // The PiPod fetches the feed in the background; refresh a few times to pick up the title.
+    [800, 3000, 8000].forEach(ms => setTimeout(() => refreshList().catch(() => {}), ms));
+  } catch (err) {
+    $("feedError").textContent = err.message;
+  }
+};
+
+$("loginForm").onsubmit = async (e) => {
+  e.preventDefault();
+  $("loginError").textContent = "";
+  try {
+    await api("/api/login", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: $("code").value.trim() }) });
+    showApp();
+    setTab(tab);
+  } catch (err) {
+    $("loginError").textContent = err.message;
+    $("code").select();
+  }
+};
+
+refreshInfo().then(info => {
+  if (info.authorized) { showApp(); setTab(tab); } else showLogin();
+}).catch(() => showLogin());
+</script>
+</body>
+</html>

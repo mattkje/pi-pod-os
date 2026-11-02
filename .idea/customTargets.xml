@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CLionExternalBuildManager">
+    <target id="8f0c7a52-2b1e-4c55-9a3e-5d1f1c2a7b01" name="pipod-os Debug" defaultType="TOOL">
+      <configuration id="0d7c4f1e-6a2b-4e8f-b1c3-9e5a2d4f6b02" name="pipod-os Debug">
+        <build type="TOOL">
+          <tool actionId="CLionProjectTool_PiPod_Build Debug" />
+        </build>
+      </configuration>
+    </target>
+    <target id="3a9e1b64-7c2d-4f0a-8e5b-1c6d9f2a4e03" name="pipod-os Release" defaultType="TOOL">
+      <configuration id="5b2f8d07-1e4a-4c9b-a6d3-7f0e2b5c8a04" name="pipod-os Release">
+        <build type="TOOL">
+          <tool actionId="CLionProjectTool_PiPod_Build Release" />
+        </build>
+      </configuration>
+    </target>
+  </component>
+</project>

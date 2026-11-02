@@ -1,0 +1,23 @@
+# pi-gen configuration for the PiPod OS image (see https://github.com/RPi-Distro/pi-gen).
+# os/build-image.sh copies this into pi-gen; values can be overridden with environment variables.
+
+IMG_NAME="${IMG_NAME:-pipod-os}"
+PI_GEN_RELEASE="PiPod OS"
+RELEASE="${RELEASE:-trixie}"
+DEPLOY_COMPRESSION="${DEPLOY_COMPRESSION:-xz}"
+
+# Raspberry Pi OS Lite (stages 0-2) plus the PiPod stage. Stage 2's own Lite image is skipped.
+STAGE_LIST="stage0 stage1 stage2 stage-pipod"
+
+TARGET_HOSTNAME="${TARGET_HOSTNAME:-pipod}"
+LOCALE_DEFAULT="${LOCALE_DEFAULT:-en_GB.UTF-8}"
+KEYBOARD_KEYMAP="${KEYBOARD_KEYMAP:-us}"
+KEYBOARD_LAYOUT="${KEYBOARD_LAYOUT:-English (US)}"
+TIMEZONE_DEFAULT="${TIMEZONE_DEFAULT:-Europe/Oslo}"
+
+# The app runs as this user. Change the password with Raspberry Pi Imager's OS customisation
+# (or set FIRST_USER_PASS) before enabling SSH.
+FIRST_USER_NAME="pipod"
+FIRST_USER_PASS="${FIRST_USER_PASS:-pipod}"
+DISABLE_FIRST_BOOT_USER_RENAME=1
+ENABLE_SSH="${ENABLE_SSH:-0}"

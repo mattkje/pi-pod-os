@@ -1,0 +1,3 @@
+# Lets the PiPod OS shell power off / reboot and apply Setup choices (hostname, time zone, Wi-Fi,
+# password) without a password. pipod-system validates its arguments.
+pipod ALL=(root) NOPASSWD: /usr/bin/systemctl poweroff, /usr/bin/systemctl reboot, /usr/local/bin/pipod-system

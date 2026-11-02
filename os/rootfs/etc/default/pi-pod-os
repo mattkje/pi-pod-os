@@ -1,0 +1,12 @@
+# Environment for the PiPod OS shell (pi-pod-os.service).
+# Edit and run `sudo systemctl restart pi-pod-os` to apply.
+
+# SDL drivers (defaults set in the service):
+# SDL_VIDEODRIVER=kmsdrm
+# SDL_AUDIODRIVER=alsa
+
+# Turn the picture 180 degrees regardless of Settings > Flip Screen (1 = flipped, 0 = normal).
+# PIPOD_FLIP=1
+
+# Repository that `pipod-update` takes releases from.
+# PIPOD_UPDATE_REPO=mattkje/pi-pod-os

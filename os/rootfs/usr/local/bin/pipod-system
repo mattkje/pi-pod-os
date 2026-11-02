@@ -1,0 +1,63 @@
+#!/bin/bash
+# Privileged helper for PiPod OS Setup / Settings. The pipod user may run it with sudo
+# (see /etc/sudoers.d/pi-pod-os); every argument is validated because it runs as root.
+#
+#   pipod-system hostname <name>            set the hostname (lowercase letters, digits, '-')
+#   pipod-system timezone <Area/City>       set the time zone
+#   pipod-system wifi-country <CC>          set the Wi-Fi regulatory country and unblock Wi-Fi
+#   pipod-system wifi-connect <ssid>        join a network; password (if any) on stdin
+#   pipod-system password                   set the calling user's password from stdin
+set -euo pipefail
+
+die() { echo "$*" >&2; exit 2; }
+
+case "${1:-}" in
+  hostname)
+    name="${2:-}"
+    [[ "$name" =~ ^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$ ]] || die "invalid hostname"
+    hostnamectl set-hostname "$name"
+    if grep -q '^127\.0\.1\.1' /etc/hosts; then
+      sed -i "s/^127\.0\.1\.1.*/127.0.1.1\t$name/" /etc/hosts
+    else
+      printf '127.0.1.1\t%s\n' "$name" >> /etc/hosts
+    fi
+    ;;
+  timezone)
+    tz="${2:-}"
+    [[ "$tz" =~ ^[A-Za-z0-9_+-]+(/[A-Za-z0-9_+-]+)*$ ]] && [ -f "/usr/share/zoneinfo/$tz" ] || die "invalid time zone"
+    timedatectl set-timezone "$tz"
+    ;;
+  wifi-country)
+    cc="${2:-}"
+    [[ "$cc" =~ ^[A-Z]{2}$ ]] || die "invalid country"
+    if command -v raspi-config >/dev/null; then
+      raspi-config nonint do_wifi_country "$cc"
+    else
+      iw reg set "$cc" 2>/dev/null || true
+    fi
+    rfkill unblock wifi 2>/dev/null || true
+    ;;
+  wifi-connect)
+    ssid="${2:-}"
+    [ -n "$ssid" ] && [ "${#ssid}" -le 32 ] || die "invalid network name"
+    pw=""
+    IFS= read -r pw || true
+    rfkill unblock wifi 2>/dev/null || true
+    if [ -n "$pw" ]; then
+      nmcli --wait 40 device wifi connect "$ssid" password "$pw"
+    else
+      nmcli --wait 40 device wifi connect "$ssid"
+    fi
+    ;;
+  password)
+    pw=""
+    IFS= read -r pw || true
+    [ -n "$pw" ] || die "empty password"
+    user="${SUDO_USER:-}"
+    [ -n "$user" ] && [ "$user" != root ] && id "$user" >/dev/null 2>&1 || die "run via sudo as the PiPod user"
+    printf '%s:%s\n' "$user" "$pw" | chpasswd
+    ;;
+  *)
+    die "usage: pipod-system hostname|timezone|wifi-country|wifi-connect|password ..."
+    ;;
+esac

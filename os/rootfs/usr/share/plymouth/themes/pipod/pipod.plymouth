@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=PiPod
+Description=PiPod OS logo on black
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/pipod
+ScriptFile=/usr/share/plymouth/themes/pipod/pipod.script

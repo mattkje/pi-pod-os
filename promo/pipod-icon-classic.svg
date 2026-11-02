@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- PiPod promo icon in the classic glossy iOS 6 style. The PiPod logo sits on an orange gradient
+     with the curved gloss highlight. Render: rsvg-convert -w 1024 -h 1024 promo/pipod-icon-classic.svg -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFB24D"/>
+      <stop offset="0.45" stop-color="#FFA233"/>
+      <stop offset="0.50" stop-color="#FF8A00"/>
+      <stop offset="0.78" stop-color="#FF9A1A"/>
+      <stop offset="1" stop-color="#FFB547"/>
+    </linearGradient>
+    <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.42"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.08"/>
+    </linearGradient>
+    <clipPath id="shape">
+      <rect width="1024" height="1024" rx="180" ry="180"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#shape)">
+    <rect width="1024" height="1024" fill="url(#bg)"/>
+    <!-- Gloss: lighter top half with a curved lower edge -->
+    <path d="M0,0 H1024 V440 Q512,560 0,440 Z" fill="url(#gloss)"/>
+  </g>
+  <!-- Thin darker rim -->
+  <rect x="2" y="2" width="1020" height="1020" rx="178" ry="178" fill="none" stroke="#C86A00" stroke-opacity="0.35" stroke-width="4"/>
+
+  <!-- PiPod logo (from assets/icons/logo.svg), white -->
+  <g fill="#FFFFFF" transform="translate(99.46 93.01) scale(25.7840)">
+  <!-- Leaves -->
+  <path d="M15.6,7.2 C12.6,7.3 9.2,5.9 8.1,2.6 C11.3,1.9 14.6,3.6 15.6,7.2 Z"/>
+  <path d="M16.4,7.2 C19.4,7.3 22.8,5.9 23.9,2.6 C20.7,1.9 17.4,3.6 16.4,7.2 Z"/>
+
+  <!-- Body with the screen and the click wheel cut out -->
+  <path fill-rule="evenodd" d="
+    M11.5,7.6 H20.5 A3,3 0 0 1 23.5,10.6 V27.6 A3,3 0 0 1 20.5,30.6 H11.5 A3,3 0 0 1 8.5,27.6 V10.6 A3,3 0 0 1 11.5,7.6 Z
+    M11.7,9.6 H20.3 A1.2,1.2 0 0 1 21.5,10.8 V16.4 A1.2,1.2 0 0 1 20.3,17.6 H11.7 A1.2,1.2 0 0 1 10.5,16.4 V10.8 A1.2,1.2 0 0 1 11.7,9.6 Z
+    M16,19.0 A5.2,5.2 0 1 1 15.999,19.0 Z"/>
+
+  <!-- Click wheel: drupelets around the centre button -->
+  <g>
+    <circle cx="16.00" cy="20.65" r="1.32"/>
+    <circle cx="18.51" cy="21.69" r="1.32"/>
+    <circle cx="19.55" cy="24.20" r="1.32"/>
+    <circle cx="18.51" cy="26.71" r="1.32"/>
+    <circle cx="16.00" cy="27.75" r="1.32"/>
+    <circle cx="13.49" cy="26.71" r="1.32"/>
+    <circle cx="12.45" cy="24.20" r="1.32"/>
+    <circle cx="13.49" cy="21.69" r="1.32"/>
+    <circle cx="16" cy="24.2" r="1.55"/>
+  </g>
+  </g>
+</svg>

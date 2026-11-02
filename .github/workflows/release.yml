@@ -1,0 +1,67 @@
+# Builds the PiPod OS app for the Pi on every version tag and publishes it as a GitHub release.
+# Devices pick these up through Settings -> Update (os/rootfs/usr/local/bin/pipod-update).
+#
+# Release: git tag v0.2.0 && git push origin v0.2.0
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.arch }}
+    runs-on: ubuntu-24.04-arm
+    # Same Debian release as the OS image, so the binary links against the same libraries.
+    container: debian:trixie
+    strategy:
+      matrix:
+        arch: [arm64]
+    steps:
+      - name: Install build dependencies
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends ca-certificates git build-essential cmake pkg-config \
+            libsdl2-dev libsdl2-ttf-dev libsdl2-image-dev libsdl2-mixer-dev libtag-dev \
+            libcurl4-openssl-dev nlohmann-json3-dev libcpp-httplib-dev \
+            libavformat-dev libavcodec-dev libavutil-dev libswscale-dev libswresample-dev libtinyxml2-dev
+
+      - uses: actions/checkout@v4
+
+      - name: Version
+        id: version
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then v="${GITHUB_REF_NAME#v}"; else v="0.0.0-${GITHUB_SHA::7}"; fi
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DPIPOD_VERSION="${{ steps.version.outputs.version }}"
+          cmake --build build -j "$(nproc)"
+
+      - name: Package
+        run: scripts/package.sh build dist ${{ matrix.arch }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pi-pod-os-${{ matrix.arch }}
+          path: dist/*.tar.gz*
+
+  release:
+    name: Publish release
+    needs: build
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" --title "PiPod OS $GITHUB_REF_NAME" --generate-notes

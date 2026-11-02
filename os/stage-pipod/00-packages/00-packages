@@ -1,0 +1,10 @@
+alsa-utils
+ca-certificates
+curl
+python3
+# <hostname>.local for the music upload page
+avahi-daemon
+plymouth
+# Plymouth's initramfs hook copies fontconfig files for every graphical theme.
+fontconfig
+fonts-dejavu-core

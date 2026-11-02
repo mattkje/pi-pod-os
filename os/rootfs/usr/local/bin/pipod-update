@@ -1,0 +1,133 @@
+#!/bin/bash
+# PiPod OS updater.
+#
+#   pipod-update check     print "available <version>" or "uptodate <version>"
+#   pipod-update install   install the latest release, print "installed <version>"
+#                          (prints "progress <0-100>" lines while it works)
+#   pipod-update rollback  switch back to the previously installed version
+#
+# Releases are GitHub release assets named pi-pod-os-<version>-<arch>.tar.gz plus a .sha256 file
+# (built by .github/workflows/release.yml). Each version is unpacked into
+# /opt/pi-pod-os/releases/<version> and /opt/pi-pod-os/current points at the active one.
+# The last line of output is always "<status> <detail>"; errors print "error <message>".
+set -uo pipefail
+
+REPO="${PIPOD_UPDATE_REPO:-mattkje/pi-pod-os}"
+ROOT="${PIPOD_ROOT:-/opt/pi-pod-os}"
+ARCH="$(dpkg --print-architecture 2>/dev/null || uname -m)"
+[ -f /etc/default/pi-pod-os ] && . /etc/default/pi-pod-os
+# Release metadata endpoint (GitHub API format); overridable for self-hosting and tests.
+API="${PIPOD_UPDATE_API:-https://api.github.com/repos/$REPO/releases/latest}"
+
+fail() { echo "error $*"; exit 1; }
+
+current_version() { cat "$ROOT/current/VERSION" 2>/dev/null || echo "0"; }
+
+# Prints "<version> <tarball url> <sha256 url> <tarball size>" for the latest release.
+latest_release() {
+  local json
+  json="$(curl -fsL --max-time 20 -H 'Accept: application/vnd.github+json' \
+    "$API" 2>/dev/null)" || fail "Can't reach update server"
+  python3 -c '
+import json, sys
+release = json.load(sys.stdin)
+arch = sys.argv[1]
+version = release.get("tag_name", "").lstrip("v")
+assets = {a["name"]: a["browser_download_url"] for a in release.get("assets", [])}
+sizes = {a["name"]: a.get("size", 0) for a in release.get("assets", [])}
+name = f"pi-pod-os-{version}-{arch}.tar.gz"
+if not version or name not in assets or name + ".sha256" not in assets:
+    sys.exit(1)
+print(version, assets[name], assets[name + ".sha256"], sizes[name] or 0)
+' "$ARCH" <<<"$json" || fail "No $ARCH build in latest release"
+}
+
+is_newer() { # is $1 newer than $2?
+  [ "$1" != "$2" ] && [ "$(printf '%s\n%s\n' "$1" "$2" | sort -V | tail -n1)" = "$1" ]
+}
+
+# Sets LATEST, URL and SUMURL, or prints the error and exits.
+fetch_latest() {
+  local out
+  out="$(latest_release)" || { echo "$out"; exit 1; }
+  read -r LATEST URL SUMURL SIZE <<<"$out"
+  [ -n "${LATEST:-}" ] || fail "No release found"
+}
+
+cmd_check() {
+  local current
+  current="$(current_version)"
+  fetch_latest
+  local latest="$LATEST"
+  if is_newer "$latest" "$current"; then echo "available $latest"; else echo "uptodate $current"; fi
+}
+
+TMP=""
+cleanup() { [ -n "$TMP" ] && rm -rf "$TMP"; }
+trap cleanup EXIT
+
+cmd_install() {
+  local current name dest
+  current="$(current_version)"
+  fetch_latest
+  local latest="$LATEST" url="$URL" sumurl="$SUMURL" size="${SIZE:-0}"
+  is_newer "$latest" "$current" || { echo "uptodate $current"; exit 0; }
+
+  TMP="$(mktemp -d)" || fail "No temp dir"
+  local tmp="$TMP"
+  name="pi-pod-os-$latest-$ARCH.tar.gz"
+  echo "progress 0"
+  # Download in the background and report how much has arrived (0-90%).
+  curl -fsL --max-time 600 -o "$tmp/$name" "$url" &
+  local pid=$! have
+  while kill -0 "$pid" 2>/dev/null; do
+    if [ "$size" -gt 0 ] 2>/dev/null; then
+      have="$(stat -c %s "$tmp/$name" 2>/dev/null || echo 0)"
+      echo "progress $(( have * 90 / size ))"
+    fi
+    sleep 0.3
+  done
+  wait "$pid" || fail "Download failed"
+  echo "progress 90"
+  curl -fsL --max-time 60 -o "$tmp/$name.sha256" "$sumurl" || fail "Download failed"
+  (cd "$tmp" && sha256sum -c --status "$name.sha256") || fail "Checksum mismatch"
+  echo "progress 93"
+
+  dest="$ROOT/releases/$latest"
+  rm -rf "$dest.new" && mkdir -p "$dest.new" || fail "Can't write $ROOT"
+  tar -xzf "$tmp/$name" -C "$dest.new" --strip-components=1 || fail "Unpack failed"
+  [ -x "$dest.new/pipod-os" ] || fail "Broken package"
+  rm -rf "$dest" && mv "$dest.new" "$dest"
+  echo "progress 98"
+
+  # Atomically repoint "current" and remember the old version for rollback.
+  [ -L "$ROOT/current" ] && ln -sfn "$(readlink "$ROOT/current")" "$ROOT/previous"
+  ln -sfn "releases/$latest" "$ROOT/current.new" && mv -T "$ROOT/current.new" "$ROOT/current"
+
+  # Keep only the current and previous versions.
+  local keep_cur keep_prev
+  keep_cur="$(basename "$(readlink "$ROOT/current")")"
+  keep_prev="$(basename "$(readlink "$ROOT/previous" 2>/dev/null || echo none)")"
+  for d in "$ROOT"/releases/*; do
+    b="$(basename "$d")"
+    [ "$b" = "$keep_cur" ] || [ "$b" = "$keep_prev" ] || rm -rf "$d"
+  done
+  echo "progress 100"
+  echo "installed $latest"
+}
+
+cmd_rollback() {
+  [ -L "$ROOT/previous" ] || fail "No previous version"
+  local prev
+  prev="$(readlink "$ROOT/previous")"
+  ln -sfn "$(readlink "$ROOT/current")" "$ROOT/previous"
+  ln -sfn "$prev" "$ROOT/current.new" && mv -T "$ROOT/current.new" "$ROOT/current"
+  echo "installed $(current_version)"
+}
+
+case "${1:-check}" in
+  check) cmd_check ;;
+  install) cmd_install ;;
+  rollback) cmd_rollback ;;
+  *) echo "usage: pipod-update check|install|rollback" >&2; exit 2 ;;
+esac

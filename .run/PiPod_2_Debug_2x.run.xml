@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="PiPod (Debug, 2x window)" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="pi-pod-os" TARGET_NAME="pipod-os Debug" CONFIG_NAME="pipod-os Debug" RUN_PATH="$PROJECT_DIR$/cmake-build-debug/pipod-os" PROGRAM_PARAMS="--windowed --size 320x240 --scale 2" WORKING_DIR="file://$PROJECT_DIR$/cmake-build-debug">
+    <method v="2">
+      <option name="RunConfigurationTask" enabled="true" run_configuration_name="Build (Debug)" run_configuration_type="ShConfigurationType" />
+    </method>
+  </configuration>
+</component>

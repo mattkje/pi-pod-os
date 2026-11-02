@@ -1,0 +1,12 @@
+cmake-build-*/
+build/
+dist/
+.DS_Store
+
+# Shared IntelliJ build targets for the run configurations in .run/
+!.idea/customTargets.xml
+!.idea/tools/
+
+# OS image build
+os/.pi-gen/
+os/deploy/

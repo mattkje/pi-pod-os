@@ -1,0 +1,36 @@
+[Unit]
+Description=PiPod OS shell
+Documentation=https://github.com/mattkje/pi-pod-os
+# Take over the first console instead of a login prompt.
+Conflicts=getty@tty1.service
+After=systemd-user-sessions.service getty@tty1.service plymouth-start.service sound.target network-online.target
+Wants=network-online.target
+
+[Service]
+User=pipod
+# A logind session on tty1 gives the app access to the display (DRM) and input devices.
+PAMName=login
+TTYPath=/dev/tty1
+TTYReset=yes
+TTYVHangup=yes
+StandardInput=tty
+StandardOutput=journal
+StandardError=journal
+SupplementaryGroups=video render input audio
+WorkingDirectory=/opt/pi-pod-os/current
+Environment=PIPOD_DEVICE=1
+# Music upload page on http://<hostname>.local (port 80 needs this capability as a normal user).
+Environment=PIPOD_WEB_PORT=80
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+Environment=SDL_VIDEODRIVER=kmsdrm
+Environment=SDL_AUDIODRIVER=alsa
+EnvironmentFile=-/etc/default/pi-pod-os
+# Stop the boot splash but leave the logo on screen; the app draws the same logo, then fades in.
+ExecStartPre=-/usr/bin/plymouth quit --retain-splash
+ExecStart=/opt/pi-pod-os/current/pipod-os
+# Restart after crashes and after updates (the app exits so the new version starts).
+Restart=always
+RestartSec=1
+
+[Install]
+WantedBy=multi-user.target

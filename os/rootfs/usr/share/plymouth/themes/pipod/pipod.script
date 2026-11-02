@@ -1,0 +1,13 @@
+# PiPod OS boot splash: the logo centred on black.
+# Size and position match drawSplash() in the app (Pages/SplashPage.h, SPLASH_LOGO_SCALE), so when
+# the app takes over the screen nothing moves.
+Window.SetBackgroundTopColor(0, 0, 0);
+Window.SetBackgroundBottomColor(0, 0, 0);
+
+logo = Image("logo.png");
+size = Math.Int(Window.GetHeight() * 0.35);
+logo = logo.Scale(size, size);
+
+sprite = Sprite(logo);
+sprite.SetX(Window.GetX() + Math.Int((Window.GetWidth() - size) / 2));
+sprite.SetY(Window.GetY() + Math.Int((Window.GetHeight() - size) / 2));
