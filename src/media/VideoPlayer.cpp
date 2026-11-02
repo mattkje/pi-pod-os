@@ -186,13 +186,13 @@ SDL_Texture *VideoPlayer::update() {
         if (!texture_ || due.w != width_ || due.h != height_) {
             if (texture_) SDL_DestroyTexture(texture_);
             SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
-            texture_ = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_IYUV, SDL_TEXTUREACCESS_STREAMING, due.w, due.h);
+            texture_ = SDL_CreateTexture(renderer_, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, due.w, due.h);
             SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
             width_ = due.w;
             height_ = due.h;
         }
         if (texture_)
-            SDL_UpdateYUVTexture(texture_, nullptr, due.y.data(), due.w, due.u.data(), due.w / 2, due.v.data(), due.w / 2);
+            SDL_UpdateTexture(texture_, nullptr, due.pixels.data(), due.w * 4);
         shownPts_ = due.pts;
     }
     return texture_;
@@ -258,22 +258,28 @@ void VideoPlayer::decodeLoop() {
         double pts = f->best_effort_timestamp == AV_NOPTS_VALUE ? 0
                      : f->best_effort_timestamp * av_q2d(fmt->streams[vIdx]->time_base);
         if (pts < skipUntil) return;
-        // Fit into MAX_W x MAX_H, keep the aspect ratio, even sizes for YUV 4:2:0.
+        // Fit into MAX_W x MAX_H, keep the aspect ratio. Frames are converted to RGB here rather than
+        // drawn as YUV textures: SDL's OpenGL ES renderer swaps red and blue when it draws a YUV
+        // texture into a render target, which the rotated screen uses.
         double scale = std::min({1.0, double(MAX_W) / f->width, double(MAX_H) / f->height});
         int w = std::max(2, static_cast<int>(f->width * scale) & ~1);
         int h = std::max(2, static_cast<int>(f->height * scale) & ~1);
         sws = sws_getCachedContext(sws, f->width, f->height, static_cast<AVPixelFormat>(f->format), w, h,
-                                   AV_PIX_FMT_YUV420P, SWS_BILINEAR, nullptr, nullptr, nullptr);
+                                   AV_PIX_FMT_BGRA, SWS_BILINEAR, nullptr, nullptr, nullptr);
         if (!sws) return;
+        // Use the video's own colour matrix and range (HD video is BT.709; swscale assumes BT.601).
+        int space = f->colorspace != AVCOL_SPC_UNSPECIFIED ? f->colorspace
+                    : (f->height >= 720 ? AVCOL_SPC_BT709 : AVCOL_SPC_BT470BG);
+        int fullRange = f->color_range == AVCOL_RANGE_JPEG;
+        const int *coeffs = sws_getCoefficients(space);
+        sws_setColorspaceDetails(sws, coeffs, fullRange, coeffs, 1, 0, 1 << 16, 1 << 16);
         Frame out;
         out.pts = pts;
         out.w = w;
         out.h = h;
-        out.y.resize(static_cast<size_t>(w) * h);
-        out.u.resize(static_cast<size_t>(w / 2) * (h / 2));
-        out.v.resize(out.u.size());
-        uint8_t *dst[4] = {out.y.data(), out.u.data(), out.v.data(), nullptr};
-        int dstStride[4] = {w, w / 2, w / 2, 0};
+        out.pixels.resize(static_cast<size_t>(w) * h * 4);
+        uint8_t *dst[4] = {out.pixels.data(), nullptr, nullptr, nullptr};
+        int dstStride[4] = {w * 4, 0, 0, 0};
         sws_scale(sws, f->data, f->linesize, 0, f->height, dst, dstStride);
 
         std::unique_lock<std::mutex> lock(frameMutex_);

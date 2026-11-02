@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.2
+
+### Fixes
+- Videos showed red and blue swapped (skin looked blue) on the Pi: SDL's OpenGL ES renderer swaps
+  them when it draws a YUV texture into the rotated screen. Frames are now converted to RGB with
+  FFmpeg, using the video's own colour matrix and range.
+- Without a usable sound output (e.g. a Pi Zero with only HDMI audio and no HDMI screen), songs stayed
+  at 0:00 and videos never started. Playback now continues silently on SDL's dummy output.
+
 ## 1.0.1
 
 ### Fixes

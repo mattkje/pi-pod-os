@@ -8,7 +8,7 @@
 #include <thread>
 #include <vector>
 
-// Plays a video file with FFmpeg: a decode thread fills a small queue of YUV frames and an audio
+// Plays a video file with FFmpeg: a decode thread fills a small queue of RGB frames and an audio
 // ring buffer. Audio goes out through SDL_mixer's music hook (normal music must be stopped while a
 // video plays) and is the master clock; video frames are shown when their time has come.
 // On Linux the Pi's hardware H.264 decoder (h264_v4l2m2m) is tried first.
@@ -46,7 +46,7 @@ private:
     struct Frame {
         double pts = 0;
         int w = 0, h = 0;
-        std::vector<uint8_t> y, u, v;
+        std::vector<uint8_t> pixels; // ARGB8888, w * 4 bytes per row
     };
 
     void decodeLoop();

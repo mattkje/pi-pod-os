@@ -208,8 +208,15 @@ int main(int argc, char **argv) {
     TTF_Init();
     IMG_Init(IMG_INIT_PNG | IMG_INIT_JPG);
     curl_global_init(CURL_GLOBAL_DEFAULT);
-    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
-        SDL_Log("SDL_mixer could not initialize! SDL_mixer Error: %s", Mix_GetError());
+    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
+        SDL_Log("No sound output (%s); playing silently", Mix_GetError());
+        // E.g. a Pi Zero whose only sound device is HDMI without a screen. Music and video clocks run
+        // on the mixer, so without one songs would stay at 0:00 and videos never start: use SDL's
+        // silent dummy output, which keeps real time.
+        SDL_AudioQuit();
+        if (SDL_AudioInit("dummy") != 0 || Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
+            SDL_Log("SDL_mixer could not initialize! SDL_mixer Error: %s", Mix_GetError());
+    }
     Mix_Init(MIX_INIT_MP3 | MIX_INIT_FLAC | MIX_INIT_OGG);
 
     SDL_Window *window;
