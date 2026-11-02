@@ -44,6 +44,7 @@ web upload, videos, photos, podcasts and over-the-air updates. Extras is a place
   - TagLib (audio metadata parsing)
   - libcurl + nlohmann/json (Jellyfin API, updates)
   - cpp-httplib (web page), FFmpeg (video playback), tinyxml2 (podcast feeds)
+  - TeX Gyre Heros font (free Helvetica clone, GUST Font License; `assets/fonts/`)
   - pi-gen (builds the OS image), Plymouth (boot splash)
 
 ## Screenshots

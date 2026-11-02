@@ -104,7 +104,7 @@ void drawTopBar(const UI &ui, const std::string &title, int width) {
     SDL_RenderDrawLine(r, 0, TOP_BAR_HEIGHT - 1, width, TOP_BAR_HEIGHT - 1);
 
     // iPod classic layout: title on the left, play state and battery on the right.
-    TTF_Font *titleFont = ui.bold ? ui.bold : ui.font;
+    TTF_Font *titleFont = ui.titleFont ? ui.titleFont : (ui.bold ? ui.bold : ui.font);
     int textH = TTF_FontHeight(titleFont);
     drawText(r, titleFont, title, TEXT_COLOR, 8, (TOP_BAR_HEIGHT - textH) / 2, 0, width - 70);
 
@@ -139,7 +139,8 @@ void drawList(const UI &ui, AppState &state, const std::vector<ListRow> &rows, i
     SDL_Rect clip{x, TOP_BAR_HEIGHT, width, areaH};
     SDL_RenderSetClipRect(r, &clip);
 
-    int lineH = TTF_FontHeight(ui.font);
+    TTF_Font *labelFont = ui.listFont ? ui.listFont : ui.font;
+    int lineH = TTF_FontHeight(labelFont);
     int smallH = TTF_FontHeight(ui.small);
     for (int i = 0; i < count; i++) {
         int y = TOP_BAR_HEIGHT + static_cast<int>(std::lround((i - state.visualOffset) * rowHeight));
@@ -150,7 +151,9 @@ void drawList(const UI &ui, AppState &state, const std::vector<ListRow> &rows, i
         if (selected) drawHighlight(r, SDL_Rect{x, y, width, rowHeight});
 
         bool twoLines = !row.detail.empty() && !row.detailRight;
-        int textY = twoLines ? y + (rowHeight - lineH - smallH) / 2 : y + (rowHeight - lineH) / 2;
+        // The second line sits just below the title's baseline, not a full line height lower.
+        int secondLine = TTF_FontAscent(labelFont) + 2;
+        int textY = twoLines ? y + (rowHeight - secondLine - smallH) / 2 : y + (rowHeight - lineH) / 2;
         int rightEdge = x + width - 8;
 
         if (row.arrow && ui.arrow) {
@@ -169,15 +172,17 @@ void drawList(const UI &ui, AppState &state, const std::vector<ListRow> &rows, i
 
         int detailW = 0;
         if (!row.detail.empty() && row.detailRight) {
+            // Align the regular-weight value to the bold label's baseline.
+            int baseline = TTF_FontAscent(labelFont) - TTF_FontAscent(ui.font);
             detailW = drawText(r, ui.font, row.detail, selected ? SELECTED_TEXT_COLOR : SUBTEXT_COLOR,
-                               rightEdge, textY, 2).x + 8;
+                               rightEdge, textY + baseline, 2).x + 8;
         }
 
         int maxW = rightEdge - (x + 10) - detailW;
-        drawText(r, ui.font, row.label, selected ? SELECTED_TEXT_COLOR : TEXT_COLOR, x + 10, textY, 0, maxW);
+        drawText(r, labelFont, row.label, selected ? SELECTED_TEXT_COLOR : TEXT_COLOR, x + 10, textY, 0, maxW);
         if (twoLines) {
             drawText(r, ui.small, row.detail, selected ? SDL_Color{220, 230, 255, 255} : SUBTEXT_COLOR,
-                     x + 10, textY + lineH, 0, maxW);
+                     x + 10, textY + secondLine, 0, maxW);
         }
 
     }

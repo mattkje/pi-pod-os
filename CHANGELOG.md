@@ -18,6 +18,7 @@ First release.
   Now Playing with tilted cover, reflection, shuffle/repeat status and progress bar.
 - About page with storage bar and device details; Settings with a status pane.
 - Translations: English, Norsk, Svenska, Dansk, Deutsch, Français, Español.
+- Helvetica-style typography like the iPod classic, using the free TeX Gyre Heros font.
 
 ### Videos, photos, podcasts
 - Videos from `~/Videos` and Jellyfin (movies and shows, transcoded to H.264 at up to 640x480),

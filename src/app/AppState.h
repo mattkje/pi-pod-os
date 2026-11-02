@@ -90,7 +90,7 @@ struct NavEntry {
 struct AppState {
     // Navigation
     Screen current = Screen::MainMenu;
-    std::string title = "iPod"; // title shown in top bar for generic pages
+    std::string title = "PiPod"; // title shown in top bar for generic pages
     int selected = 0;
     int scrollTop = 0;         // first visible row in list pages
     float visualOffset = 0.0f; // animated scroll position, eases towards scrollTop

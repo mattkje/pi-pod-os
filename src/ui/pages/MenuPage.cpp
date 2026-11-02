@@ -29,47 +29,50 @@ namespace {
         SDL_SetTextureAlphaMod(tex, 255);
     }
 
-    // Draws an icon centred in the pane with a drop shadow and a fading reflection, iPod style.
+    // Brushed-silver icon: the white icon is tinted in thin horizontal strips from light at the top
+    // to darker at the bottom, like the iPod classic's menu artwork.
+    void drawSilverIcon(SDL_Renderer *r, SDL_Texture *tex, const SDL_Rect &dst, Uint8 alpha) {
+        int tw, th;
+        SDL_QueryTexture(tex, nullptr, nullptr, &tw, &th);
+        if (tw <= 0 || th <= 0 || dst.h <= 0) return;
+        SDL_SetTextureBlendMode(tex, SDL_BLENDMODE_BLEND);
+        SDL_SetTextureAlphaMod(tex, alpha);
+        constexpr int STRIPS = 48;
+        for (int i = 0; i < STRIPS; i++) {
+            int sy0 = th * i / STRIPS, sy1 = th * (i + 1) / STRIPS;
+            int dy0 = dst.h * i / STRIPS, dy1 = dst.h * (i + 1) / STRIPS;
+            if (sy1 <= sy0 || dy1 <= dy0) continue;
+            float t = (i + 0.5f) / STRIPS;
+            // Light silver on top, a soft highlight band, darker towards the bottom.
+            float shade = 236 - 70 * t + (t > 0.45f && t < 0.55f ? 6 : 0);
+            Uint8 c = Uint8(std::clamp(shade, 0.0f, 255.0f));
+            SDL_SetTextureColorMod(tex, c, c, Uint8(std::min(255, c + 4)));
+            SDL_Rect src{0, sy0, tw, sy1 - sy0};
+            SDL_Rect out{dst.x, dst.y + dy0, dst.w, dy1 - dy0};
+            SDL_RenderCopy(r, tex, &src, &out);
+        }
+        SDL_SetTextureColorMod(tex, 255, 255, 255);
+        SDL_SetTextureAlphaMod(tex, 255);
+    }
+
+    // Draws an icon (silver, with an optional caption below) centred in the pane.
     // Album art is drawn edge to edge instead.
-    void drawPreviewItem(const UI &ui, SDL_Texture *tex, bool isArt, Uint8 alpha, int paneX, int paneW) {
+    void drawPreviewItem(const UI &ui, SDL_Texture *tex, bool isArt, const std::string &caption, Uint8 alpha,
+                         int paneX, int paneW) {
         if (!tex || alpha == 0) return;
         if (isArt) {
             drawFilledArt(ui, tex, alpha, paneX, paneW);
             return;
         }
-        SDL_Renderer *r = ui.r;
-
         int paneH = ui.h - TOP_BAR_HEIGHT;
-        int size = std::min(paneW - 56, paneH / 2);
+        int size = std::min(paneW - 64, paneH * 45 / 100);
+        TTF_Font *bold = ui.bold ? ui.bold : ui.font;
+        int captionH = caption.empty() ? 0 : TTF_FontHeight(bold) + 6;
         int x = paneX + (paneW - size) / 2;
-        int y = TOP_BAR_HEIGHT + (paneH - size) * 2 / 5;
-        SDL_Rect dst{x, y, size, size};
-
-        SDL_SetTextureBlendMode(tex, SDL_BLENDMODE_BLEND);
-        SDL_SetTextureColorMod(tex, 0, 0, 40);
-        SDL_SetTextureAlphaMod(tex, Uint8(alpha * 70 / 255));
-        SDL_Rect shadow{x + 2, y + 3, size, size};
-        SDL_RenderCopy(r, tex, nullptr, &shadow);
-        SDL_SetTextureColorMod(tex, 255, 255, 255);
-        SDL_SetTextureAlphaMod(tex, alpha);
-        SDL_RenderCopy(r, tex, nullptr, &dst);
-
-        // Reflection: flipped copy, faded out with the pane gradient drawn over it.
-        int reflH = size * 35 / 100;
-        int reflY = y + size + 2;
-        SDL_Rect src{0, 0, 0, 0};
-        int tw, th;
-        SDL_QueryTexture(tex, nullptr, nullptr, &tw, &th);
-        src = {0, th - th * 35 / 100, tw, th * 35 / 100};
-        SDL_Rect reflDst{x, reflY, size, reflH};
-        SDL_SetTextureAlphaMod(tex, Uint8(alpha * 90 / 255));
-        SDL_RenderCopyEx(r, tex, &src, &reflDst, 0, nullptr, SDL_FLIP_VERTICAL);
-        SDL_SetTextureAlphaMod(tex, 255);
-        for (int i = 0; i < reflH; i++) {
-            SDL_Color c = paneColor(reflY + i, ui.h);
-            SDL_SetRenderDrawColor(r, c.r, c.g, c.b, Uint8(110 + 145 * i / std::max(1, reflH)));
-            SDL_RenderDrawLine(r, x, reflY + i, x + size - 1, reflY + i);
-        }
+        int y = TOP_BAR_HEIGHT + (paneH - size - captionH) / 2;
+        drawSilverIcon(ui.r, tex, SDL_Rect{x, y, size, size}, alpha);
+        if (!caption.empty())
+            drawText(ui.r, bold, caption, {255, 255, 255, alpha}, paneX + paneW / 2, y + size + 6, 1, paneW - 12);
     }
 }
 
@@ -83,8 +86,8 @@ void drawMenu(const UI &ui, AppState &state, const std::vector<MenuItem> &items,
 
     Uint32 since = SDL_GetTicks() - preview.changedAt;
     Uint8 fadeIn = since >= FADE_MS ? 255 : Uint8(255 * since / FADE_MS);
-    drawPreviewItem(ui, preview.previous.get(), preview.previousIsArt, Uint8(255 - fadeIn), half, ui.w - half);
-    drawPreviewItem(ui, preview.current.get(), preview.currentIsArt, fadeIn, half, ui.w - half);
+    drawPreviewItem(ui, preview.previous.get(), preview.previousIsArt, "", Uint8(255 - fadeIn), half, ui.w - half);
+    drawPreviewItem(ui, preview.current.get(), preview.currentIsArt, preview.caption, fadeIn, half, ui.w - half);
 
     // ---------------- Left side menu ----------------
     SDL_SetRenderDrawColor(r, BACKGROUND_COLOR.r, BACKGROUND_COLOR.g, BACKGROUND_COLOR.b, 255);
@@ -99,7 +102,8 @@ void drawMenu(const UI &ui, AppState &state, const std::vector<MenuItem> &items,
     drawList(ui, state, rows, 0, half, ITEM_HEIGHT);
 
     // Top bar spans the full width; the title is centred over the menu half.
-    drawTopBar(ui, "iPod", ui.w);
+    const std::string &name = state.settings.deviceName;
+    drawTopBar(ui, name.empty() ? "PiPod" : name, ui.w);
 
     drawPaneShadow(ui, half);
 }

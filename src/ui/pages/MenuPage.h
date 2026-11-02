@@ -1,5 +1,6 @@
 #pragma once
 #include <memory>
+#include <string>
 #include <vector>
 #include "app/AppState.h"
 #include "ui/Icons.h"
@@ -9,7 +10,8 @@
 struct MenuPreview {
     std::shared_ptr<SDL_Texture> current;
     std::shared_ptr<SDL_Texture> previous;
-    bool currentIsArt = false;  // album art (square, no shadow tint) vs. white icon
+    bool currentIsArt = false;  // album art (fills the pane) vs. icon
+    std::string caption;        // e.g. "No Music", shown under the icon; empty for none
     bool previousIsArt = false;
     Uint32 changedAt = 0;
 
@@ -29,4 +31,5 @@ struct MenuPreview {
 };
 
 // Main menu: list on the left half, blue pane with icon / album art on the right half.
+// The title bar shows the device name chosen in Setup (falls back to "PiPod").
 void drawMenu(const UI &ui, AppState &state, const std::vector<MenuItem> &items, const MenuPreview &preview);

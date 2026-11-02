@@ -289,14 +289,17 @@ int main(int argc, char **argv) {
     }
 
     fs::path assets = Config::assetsDir();
-    std::string fontPath = (assets / "fonts" / "MyriadPro-Regular.otf").string();
-    TTF_Font *font = TTF_OpenFont(fontPath.c_str(), 17);
-    TTF_Font *smallFont = TTF_OpenFont(fontPath.c_str(), 13);
-    TTF_Font *mediumFont = TTF_OpenFont(fontPath.c_str(), 15);
-    TTF_Font *boldFont = TTF_OpenFont(fontPath.c_str(), 17);
-    if (boldFont) TTF_SetFontStyle(boldFont, TTF_STYLE_BOLD); // only a regular face ships; synthesise bold
-    if (!font || !smallFont || !mediumFont || !boldFont) {
-        SDL_Log("Failed to load font %s: %s", fontPath.c_str(), TTF_GetError());
+    // TeX Gyre Heros: a free Helvetica clone (GUST Font License), matching the iPod classic's Helvetica.
+    std::string fontPath = (assets / "fonts" / "texgyreheros-regular.otf").string();
+    std::string boldPath = (assets / "fonts" / "texgyreheros-bold.otf").string();
+    TTF_Font *font = TTF_OpenFont(fontPath.c_str(), 15);
+    TTF_Font *smallFont = TTF_OpenFont(fontPath.c_str(), 12);
+    TTF_Font *mediumFont = TTF_OpenFont(fontPath.c_str(), 13);
+    TTF_Font *boldFont = TTF_OpenFont(boldPath.c_str(), 15);
+    TTF_Font *listFont = TTF_OpenFont(boldPath.c_str(), 16);
+    TTF_Font *titleFont = TTF_OpenFont(boldPath.c_str(), 13);
+    if (!font || !smallFont || !mediumFont || !boldFont || !listFont || !titleFont) {
+        SDL_Log("Failed to load fonts from %s: %s", (assets / "fonts").c_str(), TTF_GetError());
         return 1;
     }
     SDL_Texture *arrow = IMG_LoadTexture(renderer, (assets / "icons" / "arrow.png").string().c_str());
@@ -310,6 +313,8 @@ int main(int argc, char **argv) {
     ui.small = smallFont;
     ui.medium = mediumFont;
     ui.bold = boldFont;
+    ui.listFont = listFont;
+    ui.titleFont = titleFont;
     ui.arrow = arrow;
     ui.w = screenW;
     ui.h = screenH;
@@ -526,7 +531,7 @@ int main(int argc, char **argv) {
             web.setDeviceName(state.settings.deviceName);
             state.history.clear();
             state.current = Screen::MainMenu;
-            state.title = "iPod";
+            state.title = "PiPod";
             state.selected = 0;
             state.scrollTop = 0;
         },
@@ -1165,6 +1170,14 @@ int main(int argc, char **argv) {
                 else if (item.icon == MenuIcon::NowPlaying && player->current()) art = player->current()->artwork;
                 if (art) preview.set(art, true);
                 else preview.set(iconTexture(item.icon), false);
+                // Like the iPod: say so when a section is empty.
+                preview.caption.clear();
+                if (!art) {
+                    if (item.icon == MenuIcon::Music && songs.empty()) preview.caption = tr("No Music");
+                    else if (item.icon == MenuIcon::Videos && videos.empty()) preview.caption = tr("No Videos");
+                    else if (item.icon == MenuIcon::Photos && photos.empty()) preview.caption = tr("No Photos");
+                    else if (item.icon == MenuIcon::Podcasts && shows.empty()) preview.caption = tr("No Podcasts");
+                }
                 drawMenu(ui, state, mainMenu, preview);
                 break;
             }
@@ -1248,6 +1261,8 @@ int main(int argc, char **argv) {
     TTF_CloseFont(smallFont);
     TTF_CloseFont(mediumFont);
     TTF_CloseFont(boldFont);
+    TTF_CloseFont(listFont);
+    TTF_CloseFont(titleFont);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
 

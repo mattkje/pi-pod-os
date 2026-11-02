@@ -7,7 +7,7 @@
 
 constexpr int TOP_BAR_HEIGHT = 20;
 
-const SDL_Color TEXT_COLOR = {40, 40, 40, 255};
+const SDL_Color TEXT_COLOR = {12, 12, 12, 255};
 const SDL_Color SUBTEXT_COLOR = {120, 120, 120, 255};
 const SDL_Color SELECTED_TEXT_COLOR = {255, 255, 255, 255};
 const SDL_Color SEPARATOR_COLOR = {200, 200, 200, 255};
@@ -21,7 +21,9 @@ struct UI {
     TTF_Font *font = nullptr;  // regular text
     TTF_Font *small = nullptr; // secondary text
     TTF_Font *medium = nullptr; // artist / album on Now Playing
-    TTF_Font *bold = nullptr;   // titles
+    TTF_Font *bold = nullptr;   // titles (Now Playing song title, dialogs)
+    TTF_Font *listFont = nullptr;  // list rows: bold, like the iPod classic menus
+    TTF_Font *titleFont = nullptr; // top bar title: small bold
     SDL_Texture *arrow = nullptr; // ">" icon for rows that open a submenu
     int w = 320;
     int h = 240;
