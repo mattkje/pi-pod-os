@@ -291,7 +291,7 @@ MenuIcons::~MenuIcons() {
 SDL_Texture *MenuIcons::createTarget() {
     // Linear filtering is what makes the downscaled icons smooth.
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
-    SDL_Texture *t = SDL_CreateTexture(r, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, SIZE, SIZE);
+    SDL_Texture *t = SDL_CreateTexture(r, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, SIZE, SIZE);
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
     if (!t) {
         SDL_Log("Icon texture failed: %s", SDL_GetError());

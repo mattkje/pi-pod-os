@@ -226,6 +226,10 @@ int main(int argc, char **argv) {
         SDL_Log("SDL_CreateWindow failed: %s", SDL_GetError());
         return 1;
     }
+    // KMS/DRM (the device, no desktop) only provides OpenGL ES. SDL would otherwise pick its desktop
+    // OpenGL renderer there, which draws garbage. SDL_RENDER_DRIVER in the environment still wins.
+    if (const char *driver = SDL_GetCurrentVideoDriver(); driver && SDL_strcasecmp(driver, "KMSDRM") == 0)
+        SDL_SetHintWithPriority(SDL_HINT_RENDER_DRIVER, "opengles2", SDL_HINT_DEFAULT);
     SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (!renderer) renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_SOFTWARE);
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
@@ -258,7 +262,7 @@ int main(int argc, char **argv) {
         }
         SDL_RenderSetLogicalSize(renderer, 0, 0);
         SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
-        canvas = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, screenW, screenH);
+        canvas = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, screenW, screenH);
         if (!canvas) {
             SDL_Log("Rotation unavailable: %s", SDL_GetError());
             canvasAngle = 0;

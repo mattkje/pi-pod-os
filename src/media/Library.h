@@ -5,6 +5,10 @@
 #include "media/Song.h"
 
 namespace Library {
+    // True for the audio file types PiPod plays (by extension, case-insensitive): MP3, M4A/AAC/ALAC,
+    // FLAC, WAV, AIFF, Ogg Vorbis, Opus and WMA.
+    bool isAudioFile(const std::string &path);
+
     // Scans the given directories (recursively) for audio files and reads their tags.
     // Missing directories are skipped.
     std::vector<Song> scanLocal(const std::vector<std::string> &dirs);

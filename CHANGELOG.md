@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.0.1
+
+### Fixes
+- Waveshare 2.8" DPI LCD (and other KMS/DRM screens): the app showed a black or white screen because
+  SDL picked its desktop OpenGL renderer; it now uses OpenGL ES, and the image keeps the EGL/GLES
+  libraries the display needs (the build checks for them).
+- Screen rotation and menu icons use a texture format every renderer supports.
+- The boot logo is turned and sized like the app's on portrait panels, so it is no longer sideways.
+- The shell service keeps restarting instead of giving up after repeated failures.
+
+### Music
+- More audio formats: M4A (AAC and Apple Lossless), AAC, AIFF and WMA, played through FFmpeg when
+  SDL_mixer can't decode a file, alongside MP3, FLAC, WAV, Ogg Vorbis and Opus. The upload page accepts them.
+
 ## 1.0.0
 
 First release.

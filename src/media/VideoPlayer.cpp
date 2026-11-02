@@ -59,10 +59,12 @@ VideoPlayer::~VideoPlayer() {
     close();
 }
 
-bool VideoPlayer::open(const std::string &path, SDL_Renderer *renderer, const std::string &httpHeaders) {
+bool VideoPlayer::open(const std::string &path, SDL_Renderer *renderer, const std::string &httpHeaders,
+                       bool audioOnly) {
     close();
     path_ = path;
     headers_ = httpHeaders;
+    audioOnly_ = audioOnly;
     renderer_ = renderer;
     error_.clear();
     quit_ = false;
@@ -228,11 +230,16 @@ void VideoPlayer::decodeLoop() {
         fail("Unsupported file");
     } else {
         if (fmt->duration > 0) duration_ = double(fmt->duration) / AV_TIME_BASE;
-        vIdx = av_find_best_stream(fmt, AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0);
+        if (!audioOnly_) vIdx = av_find_best_stream(fmt, AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0);
         aIdx = av_find_best_stream(fmt, AVMEDIA_TYPE_AUDIO, -1, vIdx, nullptr, 0);
-        if (vIdx < 0) fail("No video in file");
-        else if (!(vctx = openDecoder(fmt->streams[vIdx], true, &decoderName_))) fail("Unsupported video format");
-        if (vctx && aIdx >= 0 && (actx = openDecoder(fmt->streams[aIdx], false, nullptr))) {
+        if (audioOnly_) {
+            if (aIdx < 0) fail("No audio in file");
+        } else if (vIdx < 0) {
+            fail("No video in file");
+        } else if (!(vctx = openDecoder(fmt->streams[vIdx], true, &decoderName_))) {
+            fail("Unsupported video format");
+        }
+        if ((vctx || audioOnly_) && aIdx >= 0 && (actx = openDecoder(fmt->streams[aIdx], false, nullptr))) {
             AVChannelLayout outLayout;
             av_channel_layout_default(&outLayout, mixChannels_);
             if (swr_alloc_set_opts2(&swr, &outLayout, AV_SAMPLE_FMT_S16, mixRate_, &actx->ch_layout,
@@ -244,6 +251,7 @@ void VideoPlayer::decodeLoop() {
             }
             av_channel_layout_uninit(&outLayout);
         }
+        if (audioOnly_ && aIdx >= 0 && !actx) fail("Unsupported audio format");
     }
 
     auto handleVideo = [&](AVFrame *f) {
@@ -310,12 +318,12 @@ void VideoPlayer::decodeLoop() {
         }
     };
 
-    while (!quit_ && vctx) {
+    while (!quit_ && (vctx || actx)) {
         double target = seekTarget_;
         if (target >= 0) {
             int64_t ts = static_cast<int64_t>(target * AV_TIME_BASE);
             av_seek_frame(fmt, -1, ts, AVSEEK_FLAG_BACKWARD);
-            avcodec_flush_buffers(vctx);
+            if (vctx) avcodec_flush_buffers(vctx);
             if (actx) avcodec_flush_buffers(actx);
             {
                 std::lock_guard<std::mutex> lock(frameMutex_);
@@ -343,8 +351,10 @@ void VideoPlayer::decodeLoop() {
         int r = av_read_frame(fmt, pkt);
         if (r < 0) {
             // End of file: flush the decoders.
-            avcodec_send_packet(vctx, nullptr);
-            drain(vctx, true);
+            if (vctx) {
+                avcodec_send_packet(vctx, nullptr);
+                drain(vctx, true);
+            }
             if (actx) {
                 avcodec_send_packet(actx, nullptr);
                 drain(actx, false);
@@ -353,7 +363,7 @@ void VideoPlayer::decodeLoop() {
             decoderDone_ = true;
             continue;
         }
-        if (pkt->stream_index == vIdx) {
+        if (vctx && pkt->stream_index == vIdx) {
             if (avcodec_send_packet(vctx, pkt) >= 0) drain(vctx, true);
         } else if (actx && pkt->stream_index == aIdx) {
             if (avcodec_send_packet(actx, pkt) >= 0) drain(actx, false);

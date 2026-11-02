@@ -5,6 +5,8 @@ Documentation=https://github.com/mattkje/pi-pod-os
 Conflicts=getty@tty1.service
 After=systemd-user-sessions.service getty@tty1.service plymouth-start.service sound.target network-online.target
 Wants=network-online.target
+# Never give up restarting: the device has no other UI.
+StartLimitIntervalSec=0
 
 [Service]
 User=pipod

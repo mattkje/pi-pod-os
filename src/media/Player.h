@@ -6,8 +6,10 @@
 #include <vector>
 #include "app/AppState.h"
 #include "media/Song.h"
+#include "media/VideoPlayer.h"
 
-// Playback queue on top of SDL_mixer. Remote (Jellyfin) songs are downloaded on a background
+// Playback queue on top of SDL_mixer. Formats SDL_mixer can't decode (M4A/AAC/ALAC, AIFF, WMA, ...)
+// are played through FFmpeg instead. Remote (Jellyfin) songs are downloaded on a background
 // thread before they start; call update() once per frame.
 class Player {
 public:
@@ -34,7 +36,7 @@ public:
     int queueIndex() const { return index; }
     int queueSize() const { return static_cast<int>(queue.size()); }
     bool isPaused() const;
-    bool isActive() const { return music != nullptr; }
+    bool isActive() const { return music != nullptr || stream.isOpen(); }
     bool isLoading() const { return loading; }
     const std::string &error() const { return lastError; }
 
@@ -49,6 +51,8 @@ private:
     std::vector<Song> queue;
     int index = -1;
     Mix_Music *music = nullptr;
+    VideoPlayer stream; // FFmpeg playback when SDL_mixer can't load the file
+    int volume = 100;
     RepeatMode repeat = RepeatMode::Off;
     bool loading = false;
     std::string lastError;

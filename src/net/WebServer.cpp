@@ -21,7 +21,6 @@ std::string localIpAddress();
 
 namespace {
     constexpr unsigned long long MAX_UPLOAD = 4ULL * 1024 * 1024 * 1024; // 4 GB per file (videos)
-    const char *AUDIO_EXTENSIONS[] = {".mp3", ".flac", ".ogg", ".wav", ".opus"};
 
     std::string randomDigits(int n) {
         std::random_device rd;
@@ -55,9 +54,7 @@ namespace {
     }
 
     bool isAudioName(const std::string &name) {
-        std::string ext = lower(fs::path(name).extension().string());
-        return std::any_of(std::begin(AUDIO_EXTENSIONS), std::end(AUDIO_EXTENSIONS),
-                           [&](const char *e) { return ext == e; });
+        return Library::isAudioFile(name);
     }
 
     // Keeps only the file name and drops characters that are unsafe in file names.

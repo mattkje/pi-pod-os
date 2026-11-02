@@ -12,13 +12,16 @@
 // ring buffer. Audio goes out through SDL_mixer's music hook (normal music must be stopped while a
 // video plays) and is the master clock; video frames are shown when their time has come.
 // On Linux the Pi's hardware H.264 decoder (h264_v4l2m2m) is tried first.
+// With audioOnly it plays just the audio of a file (used by Player for formats SDL_mixer can't
+// decode, such as M4A/AAC/ALAC); embedded cover art is ignored and update() returns no texture.
 class VideoPlayer {
 public:
     VideoPlayer();
     ~VideoPlayer();
 
     // Starts playing a file or URL (HLS, http). httpHeaders: extra request headers, "Name: value\r\n" each.
-    bool open(const std::string &source, SDL_Renderer *renderer, const std::string &httpHeaders = "");
+    bool open(const std::string &source, SDL_Renderer *renderer, const std::string &httpHeaders = "",
+              bool audioOnly = false);
     void close();
     bool isOpen() const { return thread_.joinable(); }
 
@@ -52,6 +55,7 @@ private:
 
     std::string path_;
     std::string headers_;
+    bool audioOnly_ = false;
     SDL_Renderer *renderer_ = nullptr;
     SDL_Texture *texture_ = nullptr;
     int width_ = 0, height_ = 0; // size of the current texture (frames are scaled to fit 640x480)

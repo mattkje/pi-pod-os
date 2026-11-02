@@ -1,13 +1,23 @@
 # PiPod OS boot splash: the logo centred on black.
-# Size and position match drawSplash() in the app (Pages/SplashPage.h, SPLASH_LOGO_SCALE), so when
-# the app takes over the screen nothing moves.
+# Size, position and orientation match drawSplash() in the app (Pages/SplashPage.h, SPLASH_LOGO_SCALE)
+# and its screen rotation (main.cpp, applyOrientation), so when the app takes over nothing moves.
 Window.SetBackgroundTopColor(0, 0, 0);
 Window.SetBackgroundBottomColor(0, 0, 0);
 
+width = Window.GetWidth();
+height = Window.GetHeight();
+
+# The picture is always landscape: on a portrait panel (the 480x640 Waveshare) the app turns it
+# 90 degrees clockwise, so the logo is turned the same way and sized from the short side.
 logo = Image("logo.png");
-size = Math.Int(Window.GetHeight() * 0.35);
-logo = logo.Scale(size, size);
+if (height > width) {
+    size = Math.Int(width * 0.35);
+    logo = logo.Scale(size, size).Rotate(Math.Pi / 2);
+} else {
+    size = Math.Int(height * 0.35);
+    logo = logo.Scale(size, size);
+}
 
 sprite = Sprite(logo);
-sprite.SetX(Window.GetX() + Math.Int((Window.GetWidth() - size) / 2));
-sprite.SetY(Window.GetY() + Math.Int((Window.GetHeight() - size) / 2));
+sprite.SetX(Window.GetX() + Math.Int((width - logo.GetWidth()) / 2));
+sprite.SetY(Window.GetY() + Math.Int((height - logo.GetHeight()) / 2));

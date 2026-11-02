@@ -8,3 +8,10 @@ plymouth
 # Plymouth's initramfs hook copies fontconfig files for every graphical theme.
 fontconfig
 fonts-dejavu-core
+# SDL draws through KMS/DRM with OpenGL ES and loads these at run time (dlopen), so ldd does not see
+# them. They are only Recommends of SDL, and the app build's autoremove would otherwise drop them:
+# SDL_CreateWindow then fails and the shell never starts.
+libegl1
+libegl-mesa0
+libgles2
+libgbm1

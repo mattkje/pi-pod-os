@@ -49,6 +49,7 @@ void Player::freeMusic() {
         Mix_FreeMusic(music);
         music = nullptr;
     }
+    stream.close();
     // Mix_HaltMusic fires the finished hook synchronously; that's not a real "song ended".
     musicFinished = false;
 }
@@ -87,8 +88,9 @@ void Player::startCurrent() {
 
     music = Mix_LoadMUS(song.filePath.c_str());
     if (!music) {
-        lastError = Mix_GetError();
-        SDL_Log("Failed to load %s: %s", song.filePath.c_str(), lastError.c_str());
+        // Not a format SDL_mixer knows: let FFmpeg decode it. Errors show up in update().
+        stream.setVolume(volume);
+        stream.open(song.filePath, nullptr, "", true);
         return;
     }
     Mix_PlayMusic(music, 1);
@@ -128,6 +130,19 @@ void Player::update(SDL_Renderer *renderer) {
 
     if (musicFinished.exchange(false) && music) advance(false);
 
+    if (stream.isOpen()) {
+        stream.update();
+        if (stream.finished()) {
+            if (stream.error().empty()) {
+                advance(false);
+            } else {
+                lastError = stream.error();
+                SDL_Log("Failed to play %s: %s", current() ? current()->filePath.c_str() : "", lastError.c_str());
+                stream.close();
+            }
+        }
+    }
+
     if (index >= 0 && index < static_cast<int>(queue.size()))
         Library::ensureArtwork(renderer, queue[index]);
 }
@@ -164,6 +179,10 @@ void Player::previous() {
 }
 
 void Player::togglePause() {
+    if (stream.isOpen()) {
+        stream.togglePause();
+        return;
+    }
     if (!music) {
         if (current()) startCurrent(); // restart a stopped queue
         return;
@@ -180,7 +199,9 @@ void Player::stop() {
 }
 
 void Player::setVolume(int percent) {
-    Mix_VolumeMusic(std::clamp(percent, 0, 100) * MIX_MAX_VOLUME / 100);
+    volume = std::clamp(percent, 0, 100);
+    Mix_VolumeMusic(volume * MIX_MAX_VOLUME / 100);
+    stream.setVolume(volume);
 }
 
 const Song *Player::current() const {
@@ -189,10 +210,12 @@ const Song *Player::current() const {
 }
 
 bool Player::isPaused() const {
+    if (stream.isOpen()) return stream.paused();
     return music && Mix_PausedMusic();
 }
 
 double Player::position() const {
+    if (stream.isOpen()) return stream.position();
 #if SDL_MIXER_VERSION_ATLEAST(2, 6, 0)
     if (music) return Mix_GetMusicPosition(music);
 #endif
@@ -200,6 +223,7 @@ double Player::position() const {
 }
 
 double Player::duration() const {
+    if (stream.isOpen()) return stream.duration() > 0 ? stream.duration() : -1;
 #if SDL_MIXER_VERSION_ATLEAST(2, 6, 0)
     if (music) return Mix_MusicDuration(music);
 #endif

@@ -156,7 +156,7 @@
     <section class="card" id="uploadCard">
       <div id="drop">
         <strong id="dropTitle">Drop songs here</strong>
-        <span id="dropTypes">MP3, FLAC, OGG, Opus or WAV</span> &mdash; or
+        <span id="dropTypes">MP3, M4A, FLAC, WAV, AIFF, OGG, Opus or WMA</span> &mdash; or
         <button type="button" id="pick">choose files</button>
         <input type="file" id="files" multiple class="hidden">
       </div>
@@ -185,8 +185,8 @@
 const $ = (id) => document.getElementById(id);
 
 const TABS = {
-  music:  { title: "Drop songs here",  types: "MP3, FLAC, OGG, Opus or WAV",
-            accept: ".mp3,.flac,.ogg,.opus,.wav,audio/*", one: "song", many: "songs" },
+  music:  { title: "Drop songs here",  types: "MP3, M4A, FLAC, WAV, AIFF, OGG, Opus or WMA",
+            accept: ".mp3,.m4a,.m4b,.aac,.flac,.wav,.aif,.aiff,.ogg,.oga,.opus,.wma,audio/*", one: "song", many: "songs" },
   videos: { title: "Drop videos here", types: "MP4, M4V, MKV, MOV, WebM or AVI",
             accept: ".mp4,.m4v,.mkv,.mov,.webm,.avi,video/*", one: "video", many: "videos" },
   photos: { title: "Drop photos here", types: "JPEG, PNG, GIF, WebP or BMP",

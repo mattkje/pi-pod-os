@@ -41,3 +41,7 @@ if ldd /opt/pi-pod-os/current/pipod-os | grep -q "not found"; then
 	ldd /opt/pi-pod-os/current/pipod-os
 	exit 1
 fi
+# SDL opens the display libraries with dlopen, so ldd misses them (see 00-packages).
+for lib in libEGL.so.1 libGLESv2.so.2 libgbm.so.1 libdrm.so.2; do
+	ldconfig -p | grep -q "$lib" || { echo "Missing $lib (needed by SDL's KMS/DRM video driver)"; exit 1; }
+done

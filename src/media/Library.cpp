@@ -10,13 +10,15 @@
 
 namespace fs = std::filesystem;
 
-namespace {
-    bool isAudioFile(const fs::path &p) {
-        std::string ext = p.extension().string();
-        std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) { return std::tolower(c); });
-        return ext == ".mp3" || ext == ".flac" || ext == ".ogg" || ext == ".wav" || ext == ".opus";
-    }
+bool Library::isAudioFile(const std::string &path) {
+    static const char *EXTENSIONS[] = {".mp3", ".m4a", ".m4b", ".aac", ".flac", ".wav", ".aif", ".aiff",
+                                       ".ogg", ".oga", ".opus", ".wma"};
+    std::string ext = fs::path(path).extension().string();
+    std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) { return std::tolower(c); });
+    return std::any_of(std::begin(EXTENSIONS), std::end(EXTENSIONS), [&](const char *e) { return ext == e; });
+}
 
+namespace {
     // Looks for "<song>.png/.jpg" in an "artwork" folder next to the file, or next to the file itself,
     // or a "cover.jpg/folder.jpg" in the same folder.
     std::string findArtwork(const fs::path &audio) {
@@ -52,7 +54,7 @@ std::vector<Song> Library::scanLocal(const std::vector<std::string> &dirs) {
         auto it = fs::recursive_directory_iterator(dir, fs::directory_options::skip_permission_denied, ec);
         for (; !ec && it != fs::recursive_directory_iterator(); it.increment(ec)) {
             const fs::path &path = it->path();
-            if (!it->is_regular_file(ec) || !isAudioFile(path)) continue;
+            if (!it->is_regular_file(ec) || !Library::isAudioFile(path.string())) continue;
 
             Song s;
             s.filePath = path.string();

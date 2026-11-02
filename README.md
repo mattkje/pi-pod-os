@@ -20,7 +20,7 @@ web upload, videos, photos, podcasts and over-the-air updates. Extras is a place
 * Complete system image (Raspberry Pi OS Lite) that boots straight into PiPod OS, with a logo boot splash
 * iPod classic (6th/7th gen) look: split-screen main menu with album art, Now Playing with tilted
   cover and reflection, About with storage bar
-* Music playback (mp3, flac, ogg, opus, wav) with play/pause, next/previous, shuffle and repeat
+* Music playback (mp3, m4a/aac/alac, flac, wav, aiff, ogg, opus, wma) with play/pause, next/previous, shuffle and repeat
 * Optional Jellyfin library: music, plus movies and shows streamed (transcoded to fit the Pi)
 * Videos from `~/Videos` (mp4, m4v, mkv, mov, webm, avi) with hardware H.264 decoding on the Pi
 * Photos from `~/Pictures`: thumbnail grid, full-screen viewer and slideshow
