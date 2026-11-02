@@ -1,7 +1,8 @@
-# Builds the PiPod OS app for the Pi on every version tag and publishes it as a GitHub release.
-# Devices pick these up through Settings -> Update (os/rootfs/usr/local/bin/pipod-update).
+# On every version tag: builds the PiPod OS update package (for Settings -> Update, see
+# os/rootfs/usr/local/bin/pipod-update) and the complete SD-card image, and publishes both as a
+# GitHub release.
 #
-# Release: git tag v0.2.0 && git push origin v0.2.0
+# Release: git tag v1.0.1 && git push origin v1.0.1
 name: Release
 
 on:
@@ -51,9 +52,51 @@ jobs:
           name: pi-pod-os-${{ matrix.arch }}
           path: dist/*.tar.gz*
 
+  image:
+    name: Build OS image
+    # Native arm64: pi-gen builds the Pi image without emulation.
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 240
+    steps:
+      - name: Free disk space
+        # pi-gen needs ~15 GB; the runner image ships large toolchains we don't use.
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/.ghcup \
+            /opt/hostedtoolcache /usr/local/share/boost /usr/share/swift || true
+          sudo docker image prune --all --force || true
+          df -h /
+
+      - uses: actions/checkout@v4
+
+      - name: Version
+        id: version
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then v="${GITHUB_REF_NAME#v}"; else v="0.0.0-${GITHUB_SHA::7}"; fi
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+
+      - name: Build image
+        env:
+          PIPOD_VERSION: ${{ steps.version.outputs.version }}
+        run: os/build-image.sh
+
+      - name: Package
+        run: |
+          mkdir -p dist
+          img=$(ls os/deploy/*.img.xz | head -n1)
+          name="pipod-os-${{ steps.version.outputs.version }}.img.xz"
+          mv "$img" "dist/$name"
+          (cd dist && sha256sum "$name" > "$name.sha256")
+          ls -lh dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pipod-os-image
+          path: dist/*
+          compression-level: 0 # already xz-compressed
+
   release:
     name: Publish release
-    needs: build
+    needs: [build, image]
     if: github.ref_type == 'tag'
     runs-on: ubuntu-latest
     steps:

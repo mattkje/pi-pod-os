@@ -4,6 +4,9 @@
 #   os/build-image.sh            full build -> os/deploy/image_<date>-pipod-os.img.xz
 #   os/build-image.sh --continue rebuild only the PiPod stage on top of the previous build
 #
+# PIPOD_VERSION=1.2.3 os/build-image.sh  builds the app with that version (used by the release
+# workflow so the image reports the tag's version); otherwise the version in CMakeLists.txt.
+#
 # Needs Docker. On Apple Silicon (arm64) the build runs natively; elsewhere pi-gen uses qemu.
 set -euo pipefail
 
@@ -28,6 +31,9 @@ mkdir -p "$PIGEN_DIR/stage-pipod/01-app/files/src" "$PIGEN_DIR/stage-pipod/02-sy
 git -C "$ROOT" ls-files -co --exclude-standard -z \
   | rsync -a --from0 --files-from=- "$ROOT/" "$PIGEN_DIR/stage-pipod/01-app/files/src/"
 rm -rf "$PIGEN_DIR/stage-pipod/01-app/files/src/os/.pi-gen"
+if [ -n "${PIPOD_VERSION:-}" ]; then
+  echo "$PIPOD_VERSION" > "$PIGEN_DIR/stage-pipod/01-app/files/src/.pipod-version"
+fi
 cp -R "$ROOT/os/rootfs" "$PIGEN_DIR/stage-pipod/02-system/files/rootfs"
 
 # Only export the final image.

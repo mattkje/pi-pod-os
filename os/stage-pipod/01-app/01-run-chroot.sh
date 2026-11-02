@@ -9,7 +9,11 @@ apt-get update
 apt-get install -y --no-install-recommends $BUILD_DEPS
 
 src=/tmp/pi-pod-os-src
-cmake -S "$src" -B "$src/build" -DCMAKE_BUILD_TYPE=Release
+# A release build passes its version in .pipod-version (see os/build-image.sh).
+version_arg=""
+[ -f "$src/.pipod-version" ] && version_arg="-DPIPOD_VERSION=$(cat "$src/.pipod-version")"
+# shellcheck disable=SC2086
+cmake -S "$src" -B "$src/build" -DCMAKE_BUILD_TYPE=Release $version_arg
 cmake --build "$src/build" -j "$(nproc)"
 "$src/scripts/package.sh" "$src/build" "$src/dist" "$(dpkg --print-architecture)"
 

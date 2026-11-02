@@ -79,7 +79,8 @@ Test run on Raspberry Pi 3B+, running Raspberry Pi OS 64bit Lite, with a 2.8" Pi
 PiPod OS ships as a complete system image: Raspberry Pi OS Lite (Debian trixie, 64-bit) that boots
 straight into PiPod OS, with no desktop or login prompt.
 
-1. Build the image with `os/build-image.sh` (see "How the OS is put together"), or use one attached to a release.
+1. Download `pipod-os-<version>.img.xz` from the latest release, or build it yourself with
+   `os/build-image.sh` (see "How the OS is put together").
 2. Flash it with [Raspberry Pi Imager](https://www.raspberrypi.com/software/) ("Use custom").
    Use Imager's OS customisation to set Wi-Fi, a password for the `pipod` user and SSH if you want it.
 3. Boot. PiPod OS starts on the screen; plug in a keyboard to control it.
@@ -117,7 +118,8 @@ restarts PiPod OS. Versions live in `/opt/pi-pod-os/releases/<version>` with `/o
 pointing at the active one, so a bad update can be undone over SSH with `pipod-update rollback`.
 
 Publishing an update: push a version tag and the `Release` GitHub Actions workflow builds the
-arm64 package and creates the release that devices download.
+arm64 update package and the complete SD-card image (`pipod-os-<version>.img.xz`, about 45 minutes)
+and creates the release with both attached.
 
 ```bash
 git tag v0.2.0 && git push origin v0.2.0
